@@ -1,0 +1,65 @@
+# =============================================================================
+# .gitignore para projeto Django — AuraSaaS
+# =============================================================================
+
+# --- Variáveis de ambiente (NUNCA commitar!) ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# --- Virtual Environment ---
+venv/
+env/
+ENV/
+.venv/
+
+# --- Django ---
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# --- Static files coletados ---
+staticfiles/
+static_root/
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Testes e Coverage ---
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover
+.pytest_cache/
+
+# --- Migrações geradas automaticamente (opcional — remova se preferir commitar) ---
+# */migrations/*.py
+# !*/migrations/__init__.py

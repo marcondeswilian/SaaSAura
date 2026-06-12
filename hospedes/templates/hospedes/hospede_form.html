@@ -1,0 +1,214 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}{{ action }} Hóspede - AuraSaaS{% endblock %}
+
+{% block header_title %}{{ action }} Hóspede{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Back link -->
+    <div class="mb-5">
+        <a href="{% url 'hospede-lista' %}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            Voltar para o CRM de Hóspedes
+        </a>
+    </div>
+
+    <!-- Header Hero Card -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 shadow-xl mb-8 border border-slate-800">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10">
+            <h2 class="text-2xl font-extrabold text-white tracking-tight">{{ action }} Registro de Hóspede</h2>
+            <p class="mt-2 text-slate-400 text-sm max-w-xl">
+                Preencha os dados cadastrais básicos e selecione as tags de classificação do cliente para o CRM.
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <form method="POST" class="divide-y divide-slate-100">
+            {% csrf_token %}
+            
+            <!-- Section 1: Personal Data -->
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Dados Pessoais (FNRH)</h3>
+                        <p class="text-xs text-slate-500">Dados básicos exigidos pela Ficha Nacional de Registro de Hóspedes</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-3">
+                        <label for="nome_completo" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome Completo <span class="text-rose-500">*</span></label>
+                        <input type="text" name="nome_completo" id="nome_completo" value="{{ hospede.nome_completo|default:'' }}" required
+                               placeholder="Digite o nome completo do hóspede"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div>
+                        <label for="cpf" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">CPF / Documento</label>
+                        <input type="text" name="cpf" id="cpf" value="{{ hospede.cpf|default:hospede.numero_documento|default:'' }}"
+                               placeholder="Ex: 000.000.000-00"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div>
+                        <label for="data_nascimento" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Data de Nascimento</label>
+                        <input type="date" name="data_nascimento" id="data_nascimento" value="{{ hospede.data_nascimento|date:'Y-m-d' }}"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div>
+                        <label for="genero" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Gênero</label>
+                        <select name="genero" id="genero"
+                                class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="" {% if not hospede.genero %}selected{% endif %}>Selecione</option>
+                            <option value="M" {% if hospede.genero == 'M' %}selected{% endif %}>Masculino</option>
+                            <option value="F" {% if hospede.genero == 'F' %}selected{% endif %}>Feminino</option>
+                            <option value="O" {% if hospede.genero == 'O' %}selected{% endif %}>Outro</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="profissao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Profissão</label>
+                        <input type="text" name="profissao" id="profissao" value="{{ hospede.profissao|default:'' }}"
+                               placeholder="Ex: Engenheiro"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Contact Info -->
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="phone" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Contato</h3>
+                        <p class="text-xs text-slate-500">Informações para comunicação e automação de mensagens</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="email" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">E-mail</label>
+                        <input type="email" name="email" id="email" value="{{ hospede.email|default:'' }}"
+                               placeholder="Ex: cliente@email.com"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div>
+                        <label for="telefone" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Telefone / WhatsApp</label>
+                        <input type="text" name="telefone" id="telefone" value="{{ hospede.telefone|default:'' }}"
+                               placeholder="Ex: (11) 99999-9999"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Address -->
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Endereço</h3>
+                        <p class="text-xs text-slate-500">Dados geográficos de origem do hóspede</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div>
+                        <label for="cep" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">CEP</label>
+                        <input type="text" name="cep" id="cep" value="{{ hospede.cep|default:'' }}"
+                               placeholder="Ex: 00000-000"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label for="endereco" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Endereço Completo</label>
+                        <input type="text" name="endereco" id="endereco" value="{{ hospede.endereco|default:'' }}"
+                               placeholder="Ex: Rua das Flores, 123 - Centro"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="cidade" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Cidade</label>
+                        <input type="text" name="cidade" id="cidade" value="{{ hospede.cidade|default:'' }}"
+                               placeholder="Ex: São Paulo"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="estado" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Estado (UF)</label>
+                        <input type="text" name="estado" id="estado" value="{{ hospede.estado|default:'' }}"
+                               placeholder="Ex: SP"
+                               class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: CRM Tags -->
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="tag" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Etiquetas / Tags (CRM)</h3>
+                        <p class="text-xs text-slate-500">Selecione as classificações personalizadas para este cliente</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {% for tag in tags_pousada %}
+                        <label class="relative flex items-center gap-2.5 px-4 py-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.01] active:scale-95 shadow-sm"
+                               style="border-color: {{ tag.cor }}30; background-color: {{ tag.cor }}05;">
+                            <input type="checkbox" name="tags" value="{{ tag.id }}" 
+                                   {% if tag.id in hospede_tags_ids %}checked{% endif %} 
+                                   class="rounded focus:ring-0 w-4 h-4 border-slate-300 transition-colors"
+                                   style="color: {{ tag.cor }};">
+                            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ tag.cor }};"></span>
+                            <span class="text-xs font-semibold text-slate-700 truncate" title="{{ tag.nome }}">{{ tag.nome }}</span>
+                        </label>
+                    {% empty %}
+                        <div class="col-span-full py-4 text-center text-slate-400 text-xs italic">
+                            Nenhuma tag cadastrada para a sua pousada no momento. Cadastre tags no painel de administração se necessário.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Submit action block -->
+            <div class="p-6 md:p-8 bg-slate-50/50 flex justify-end gap-3">
+                {% if action == 'Editar' %}
+                <!-- Campo oculto para ação de exclusão (prevenção de Enter acidental) -->
+                <input type="hidden" name="acao" id="acao-field" value="">
+                <button type="button"
+                        onclick="if(confirm('Confirmar exclusão permanente deste hóspede?')) { document.getElementById('acao-field').value='excluir'; this.closest('form').submit(); }"
+                        class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-rose-600/20 hover:shadow-rose-600/35 border border-rose-700 transition-all flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Excluir
+                </button>
+                {% endif %}
+                <a href="{% url 'hospede-lista' %}" class="px-6 py-2.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all flex items-center gap-2">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 border border-indigo-700 transition-all flex items-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    {% if action == 'Criar' %}Salvar Hóspede{% else %}Atualizar Hóspede{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

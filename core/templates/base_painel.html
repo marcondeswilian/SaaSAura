@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AuraSaaS - Gerenciamento de Reservas{% endblock %}</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 shrink-0">
+        <div>
+            <!-- Logo area -->
+            <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-2.5 overflow-hidden">
+                {% if request.user.pousada.logo %}
+                    <div class="h-10 w-auto flex items-center">
+                        <img src="{{ request.user.pousada.logo.url }}" alt="{{ request.user.pousada.nome }}" class="max-h-full max-w-[190px] object-contain rounded-lg">
+                    </div>
+                {% else %}
+                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-600/30 shrink-0">
+                        A
+                    </div>
+                    <div>
+                        <span class="text-white font-bold tracking-tight block">AuraSaaS</span>
+                        <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">Painel Hoteleiro</span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="p-4 space-y-1.5">
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_reservas or request.user.cliente_saas.nivel_acesso.pode_acessar_governanca %}
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_reservas %}
+                <a href="{% url 'calendario' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'calendario' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Mapa de Reservas</span>
+                </a>
+                <a href="{% url 'reserva-lista' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'reserva-lista' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                    <span>Lista de Reservas</span>
+                </a>
+                {% endif %}
+                
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_crm %}
+                <a href="{% url 'hospede-lista' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'hospede-lista' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Clientes / CRM</span>
+                </a>
+                {% endif %}
+                
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_governanca %}
+                <a href="{% url 'governanca-dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'governanca-dashboard' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                    <span>Governança</span>
+                </a>
+                {% endif %}
+                
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_configuracoes %}
+                <a href="{% url 'pousada-config' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'pousada-config' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>Configurações</span>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        
+        <!-- Pousada Footer -->
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3 px-3 py-2 bg-slate-950/40 rounded-lg border border-slate-800/50">
+                <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700/60 overflow-hidden shrink-0">
+                    {% if request.user.pousada.logo %}
+                        <img src="{{ request.user.pousada.logo.url }}" alt="{{ request.user.pousada.nome }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <i data-lucide="hotel" class="w-4 h-4 text-indigo-400"></i>
+                    {% endif %}
+                </div>
+                <div class="overflow-hidden">
+                    <span class="text-xs text-slate-400 block font-semibold truncate">{{ request.user.pousada.nome|default:"Minha Pousada" }}</span>
+                    <span class="text-[10px] text-slate-500 block truncate">{{ request.user.email }}</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- HEADER -->
+        <header class="bg-white border-b border-slate-200 h-16 flex items-center px-8 justify-between shrink-0">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight">{% block header_title %}Painel de Controle{% endblock %}</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-slate-700">Olá, {{ request.user.username }}</span>
+                </div>
+                <div class="w-px h-6 bg-slate-200"></div>
+                <form action="{% url 'logout' %}" method="post" id="logout-form" class="hidden">
+                    {% csrf_token %}
+                </form>
+                <a href="#" onclick="document.getElementById('logout-form').submit(); return false;" class="p-2 text-slate-400 hover:text-rose-500 transition-colors" title="Sair">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- WRAPPER / CONTAINER -->
+        <main class="p-8 overflow-y-auto flex-1">
+            <!-- Messages (Django framework) -->
+            {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for message in messages %}
+                <div class="p-4 rounded-xl border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %} flex items-center gap-3 text-sm shadow-sm transition-all duration-300">
+                    {% if message.tags == 'success' %}
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                    {% else %}
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600"></i>
+                    {% endif %}
+                    <span class="font-medium">{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Dynamic Content -->
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <div id="toast-icon-container">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        </div>
+        <span id="toast-message" class="text-sm font-semibold">Mensagem de Toast</span>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+        // Toast Helper (Shared)
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const iconContainer = document.getElementById('toast-icon-container');
+            
+            if (iconContainer) {
+                if (type === 'error') {
+                    iconContainer.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>';
+                } else {
+                    iconContainer.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>';
+                }
+                lucide.createIcons();
+            }
+
+            toastMsg.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

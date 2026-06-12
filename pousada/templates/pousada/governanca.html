@@ -1,0 +1,509 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Governança e Manutenção - AuraSaaS{% endblock %}
+
+{% block header_title %}Painel de Governança & Manutenção{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto">
+    <!-- Header Hero Card -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 shadow-xl border border-slate-800">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight">Operações de Governança & Manutenção</h2>
+                <p class="mt-2 text-slate-400 text-sm max-w-2xl">
+                    Gerencie a higienização dos quartos e o fluxo de ordens de serviço de manutenção em tempo real. Delegue responsabilidades e garanta a qualidade das acomodações.
+                </p>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 text-xs font-semibold text-slate-300">
+                <span class="text-slate-400">Status Checklist:</span>
+                {% if pousada.usa_checklist_limpeza %}
+                    <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg">Checklists Ativos</span>
+                {% else %}
+                    <span class="px-2 py-1 bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded-lg">Desativados</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="flex border-b border-slate-200">
+        <button onclick="switchTab('limpeza-tab', this)" class="tab-btn py-3 px-6 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm flex items-center gap-2 cursor-pointer transition-all duration-200">
+            <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+            Quartos e Limpeza
+        </button>
+        <button onclick="switchTab('manutencao-tab', this)" class="tab-btn py-3 px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-sm flex items-center gap-2 cursor-pointer transition-all duration-200">
+            <i data-lucide="wrench" class="w-4 h-4"></i>
+            Manutenção & OS
+        </button>
+    </div>
+
+    <!-- TAB 1: LIMPEZA E STATUS -->
+    <div id="limpeza-tab" class="tab-content block">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- COLUMN 1: QUARTOS SUJOS -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                        <h3 class="font-bold text-slate-800 text-sm">Quartos Sujos</h3>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-100 rounded-full text-xs font-bold">{{ quartos_sujos|length }}</span>
+                </div>
+
+                <div class="space-y-4">
+                    {% for q in quartos_sujos %}
+                    <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all space-y-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="font-extrabold text-slate-900 text-base block">Quarto {{ q.nome_identificacao }}</span>
+                                <span class="text-xs text-slate-500 font-medium block">{{ q.categoria.nome }}</span>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-100">Sujo</span>
+                        </div>
+
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="iniciar_limpeza">
+                            <input type="hidden" name="quarto_id" value="{{ q.id }}">
+                            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 border border-indigo-700">
+                                <i data-lucide="play" class="w-4 h-4"></i> Iniciar Limpeza
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center p-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
+                        <i data-lucide="sparkles" class="w-8 h-8 mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Nenhum quarto sujo!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- COLUMN 2: EM LIMPEZA -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <h3 class="font-bold text-slate-800 text-sm">Em Limpeza</h3>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-full text-xs font-bold">{{ quartos_em_limpeza|length }}</span>
+                </div>
+
+                <div class="space-y-4">
+                    {% for q in quartos_em_limpeza %}
+                    <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all space-y-4">
+                        <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+                            <div>
+                                <span class="font-extrabold text-slate-900 text-base block">Quarto {{ q.nome_identificacao }}</span>
+                                <span class="text-xs text-slate-500 font-medium block">{{ q.categoria.nome }}</span>
+                                {% if q.active_registro.reserva_relacionada %}
+                                <span class="text-[10px] text-slate-400 block mt-0.5">Pós check-out de: <strong>{{ q.active_registro.reserva_relacionada.hospede.nome_completo }}</strong></span>
+                                {% endif %}
+                            </div>
+                            <div class="text-right">
+                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-100">Limpando</span>
+                                <span class="text-[10px] font-medium text-slate-400 block mt-1">Por: {{ q.active_registro.funcionario.username }}</span>
+                            </div>
+                        </div>
+
+                        {% if pousada.usa_checklist_limpeza %}
+                        <!-- CHECKLIST ITEMS FORM -->
+                        <form method="POST" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="salvar_checklist">
+                            <input type="hidden" name="registro_id" value="{{ q.active_registro.id }}">
+
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Tarefas de Limpeza:</span>
+                                {% for item in q.itens_checklist %}
+                                <label class="flex items-start gap-2.5 p-2 bg-slate-50 border border-slate-150 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer text-xs">
+                                    <input type="checkbox" name="itens_concluidos[]" value="{{ item.id }}" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer mt-0.5" {% if item.concluido %}checked{% endif %}>
+                                    <span class="font-medium text-slate-700 leading-snug">{{ item.checklist_item.descricao }}</span>
+                                </label>
+                                {% empty %}
+                                <p class="text-xs text-slate-400 italic">Nenhum item de checklist cadastrado.</p>
+                                {% endfor %}
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button type="submit" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer text-center">
+                                    Salvar Progresso
+                                </button>
+                                <button type="button" onclick="submitFinalizarForm('{{ q.active_registro.id }}')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer text-center">
+                                    Concluir Limpeza
+                                </button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <!-- SIMPLE FINISH ACTION -->
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="finalizar_limpeza">
+                            <input type="hidden" name="registro_id" value="{{ q.active_registro.id }}">
+                            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10 border border-emerald-700">
+                                <i data-lucide="check" class="w-4 h-4"></i> Finalizar Limpeza
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center p-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
+                        <i data-lucide="clock" class="w-8 h-8 mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Nenhuma limpeza em andamento.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- COLUMN 3: QUARTOS LIMPOS -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <h3 class="font-bold text-slate-800 text-sm">Quartos Limpos</h3>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-xs font-bold">{{ quartos_limpos|length }}</span>
+                </div>
+
+                <div class="space-y-4">
+                    {% for q in quartos_limpos %}
+                    <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all space-y-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="font-extrabold text-slate-900 text-base block">Quarto {{ q.nome_identificacao }}</span>
+                                <span class="text-xs text-slate-500 font-medium block">{{ q.categoria.nome }}</span>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">Liberado</span>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <form method="POST" class="flex-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="marcar_sujo">
+                                <input type="hidden" name="quarto_id" value="{{ q.id }}">
+                                <button type="submit" class="w-full py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center border border-transparent hover:border-rose-200 flex items-center justify-center gap-1">
+                                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Sujar Quarto
+                                </button>
+                            </form>
+                            
+                            {% if not pousada.usa_checklist_limpeza %}
+                            <!-- Se checklist desativado, possibilita forçar registro rápido como limpo de novo (auditoria) -->
+                            <form method="POST" class="flex-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="finalizar_limpeza">
+                                <input type="hidden" name="quarto_id" value="{{ q.id }}">
+                                <button type="submit" class="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center border border-slate-200 flex items-center justify-center gap-1">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Registrar Limpeza
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center p-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
+                        <i data-lucide="alert-circle" class="w-8 h-8 mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Nenhum quarto limpo! Todos precisam de higienização.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: MANUTENÇÃO & OS -->
+    <div id="manutencao-tab" class="tab-content hidden space-y-6">
+        <!-- Actions & Header -->
+        <div class="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-lg">Ordens de Serviço de Manutenção</h3>
+                <p class="text-xs text-slate-500 mt-1">Delegue e gerencie manutenções hidráulicas, elétricas, ou limpezas extraordinárias.</p>
+            </div>
+            
+            <button onclick="toggleModal('modal-nova-os', true)" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i> Nova Ordem de Serviço
+            </button>
+        </div>
+
+        <!-- OS Grid/List -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs font-medium text-slate-600">
+                <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-250">
+                    <tr>
+                        <th class="px-6 py-4">ID</th>
+                        <th class="px-6 py-4">Quarto</th>
+                        <th class="px-6 py-4">Serviço</th>
+                        <th class="px-6 py-4">Prioridade</th>
+                        <th class="px-6 py-4">Atribuído A</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Abertura</th>
+                        <th class="px-6 py-4 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for os in ordens_servico %}
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-900">#{{ os.id }}</td>
+                        <td class="px-6 py-4">
+                            <span class="font-bold text-slate-800">Quarto {{ os.quarto.nome_identificacao }}</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">{{ os.quarto.categoria.nome }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-1.5">
+                                {% if os.tipo_servico == 'limpeza' %}
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+                                {% elif os.tipo_servico == 'encanamento' %}
+                                    <i data-lucide="droplet" class="w-4 h-4 text-blue-500"></i>
+                                {% elif os.tipo_servico == 'eletrica' %}
+                                    <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                                {% else %}
+                                    <i data-lucide="wrench" class="w-4 h-4 text-slate-500"></i>
+                                {% endif %}
+                                <span class="capitalize text-slate-700 font-semibold">{{ os.get_tipo_servico_display }}</span>
+                            </div>
+                            {% if os.descricao %}
+                                <span class="text-[10px] text-slate-400 block truncate max-w-[200px] mt-0.5" title="{{ os.descricao }}">{{ os.descricao }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide
+                                {% if os.prioridade == 'alta' %}bg-rose-50 text-rose-700 border border-rose-100
+                                {% elif os.prioridade == 'media' %}bg-amber-50 text-amber-700 border border-amber-100
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ os.get_prioridade_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-slate-700">
+                            {{ os.responsavel.username|default:"Não atribuído" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide
+                                {% if os.status == 'concluido' %}bg-emerald-50 text-emerald-700 border border-emerald-100
+                                {% elif os.status == 'em_andamento' %}bg-indigo-50 text-indigo-700 border border-indigo-100
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ os.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400 font-medium">
+                            {{ os.data_criacao|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            {% if os.status != 'concluido' %}
+                            <button onclick="openEditModal('{{ os.id }}', '{{ os.responsavel.id|default:'' }}', '{{ os.status }}')" class="p-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg border border-slate-200 hover:border-indigo-100 transition-all cursor-pointer font-bold inline-flex items-center gap-1">
+                                <i data-lucide="edit" class="w-3.5 h-3.5"></i> Editar
+                            </button>
+                            {% else %}
+                            <span class="text-[10px] text-emerald-600 font-bold block" title="Concluído em: {{ os.data_conclusao|date:'d/m/Y H:i' }}">Concluída</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-10 text-center text-slate-400">
+                            <i data-lucide="wrench" class="w-8 h-8 mb-2 mx-auto text-slate-300"></i>
+                            <p class="text-xs font-semibold">Nenhuma Ordem de Serviço registrada.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- HIDDEN FORM FOR CHECKLIST COMPLETION SUBMISSION -->
+<form id="finalizar-limpeza-form" method="POST" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="acao" value="finalizar_limpeza">
+    <input type="hidden" id="finalizar-registro-id" name="registro_id" value="">
+</form>
+
+<!-- MODAL: NOVA ORDEM DE SERVIÇO -->
+<div id="modal-nova-os" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all duration-300">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i data-lucide="wrench" class="w-4 h-4 text-indigo-600"></i>
+                Nova Ordem de Serviço
+            </h3>
+            <button onclick="toggleModal('modal-nova-os', false)" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_ordem_servico">
+            
+            <div class="space-y-1.5">
+                <label for="os-quarto" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Quarto</label>
+                <select id="os-quarto" name="quarto_id" required class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                    {% for q in quartos_sujos %}
+                        <option value="{{ q.id }}">Quarto {{ q.nome_identificacao }} (Sujo)</option>
+                    {% endfor %}
+                    {% for q in quartos_em_limpeza %}
+                        <option value="{{ q.id }}">Quarto {{ q.nome_identificacao }} (Limpando)</option>
+                    {% endfor %}
+                    {% for q in quartos_limpos %}
+                        <option value="{{ q.id }}">Quarto {{ q.nome_identificacao }} (Limpo)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label for="os-tipo" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tipo de Serviço</label>
+                    <select id="os-tipo" name="tipo_servico" required class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                        <option value="limpeza">Limpeza</option>
+                        <option value="encanamento">Encanamento</option>
+                        <option value="eletrica">Elétrica</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label for="os-prioridade" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Prioridade</label>
+                    <select id="os-prioridade" name="prioridade" required class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                        <option value="baixa">Baixa</option>
+                        <option value="media" selected>Média</option>
+                        <option value="alta">Alta</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1.5">
+                <label for="os-responsavel" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Funcionário Responsável</label>
+                <select id="os-responsavel" name="responsavel_id" class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                    <option value="">-- Não Atribuído --</option>
+                    {% for f in funcionarios %}
+                        <option value="{{ f.id }}">{{ f.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="space-y-1.5">
+                <label for="os-descricao" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Descrição do Problema / Tarefa</label>
+                <textarea id="os-descricao" name="descricao" rows="3" required class="w-full rounded-xl border-slate-250 text-xs font-medium focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border" placeholder="Descreva os detalhes da manutenção..."></textarea>
+            </div>
+            
+            <div class="flex gap-2.5 pt-2">
+                <button type="button" onclick="toggleModal('modal-nova-os', false)" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer text-center border">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center shadow-md">
+                    Criar Ordem
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR / ATRIBUIR OS -->
+<div id="modal-editar-os" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all duration-300">
+    <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i data-lucide="wrench" class="w-4 h-4 text-indigo-600"></i>
+                Atualizar Ordem de Serviço <span id="lbl-os-id"></span>
+            </h3>
+            <button onclick="toggleModal('modal-editar-os', false)" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form method="POST" class="p-6 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="alterar_status_ordem">
+            <input type="hidden" id="edit-os-id" name="ordem_id" value="">
+            
+            <div class="space-y-1.5">
+                <label for="edit-os-responsavel" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Atribuir Responsável</label>
+                <select id="edit-os-responsavel" name="responsavel_id" class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                    <option value="">-- Sem Atribuição --</option>
+                    {% for f in funcionarios %}
+                        <option value="{{ f.id }}">{{ f.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="space-y-1.5">
+                <label for="edit-os-status" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</label>
+                <select id="edit-os-status" name="status" required class="w-full rounded-xl border-slate-250 text-xs font-semibold focus:border-indigo-500 focus:ring-indigo-500 p-2.5 bg-slate-50 border">
+                    <option value="pendente">Pendente</option>
+                    <option value="em_andamento">Em Andamento</option>
+                    <option value="concluido">Concluído</option>
+                </select>
+            </div>
+            
+            <div class="flex gap-2.5 pt-2">
+                <button type="button" onclick="toggleModal('modal-editar-os', false)" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer text-center border">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center shadow-md">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function submitFinalizarForm(registroId) {
+        if(confirm('Confirmar conclusão da limpeza e liberação do quarto?')) {
+            document.getElementById('finalizar-registro-id').value = registroId;
+            document.getElementById('finalizar-limpeza-form').submit();
+        }
+    }
+
+    // Tab switcher logic
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('block');
+        });
+        
+        document.getElementById(tabId).classList.remove('hidden');
+        document.getElementById(tabId).classList.add('block');
+        
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
+            el.classList.add('border-transparent', 'text-slate-500', 'font-semibold');
+        });
+        
+        btn.classList.remove('border-transparent', 'text-slate-500', 'font-semibold');
+        btn.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
+    }
+
+    // Modal helpers
+    function toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        if (show) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+                modal.querySelector('.bg-white').classList.add('scale-100');
+            }, 10);
+        } else {
+            modal.querySelector('.bg-white').classList.remove('scale-100');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 150);
+        }
+    }
+
+    function openEditModal(osId, responsavelId, status) {
+        document.getElementById('lbl-os-id').textContent = '#' + osId;
+        document.getElementById('edit-os-id').value = osId;
+        document.getElementById('edit-os-responsavel').value = responsavelId;
+        document.getElementById('edit-os-status').value = status;
+        toggleModal('modal-editar-os', true);
+    }
+</script>
+{% endblock %}

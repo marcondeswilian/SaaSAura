@@ -1,0 +1,718 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Painel do SaaS - AuraSaaS{% endblock %}
+{% block header_title %}Gerenciamento do SaaS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Banner -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Total de Clientes</span>
+                <span class="text-3xl font-extrabold text-slate-900">{{ clientes|length }}</span>
+            </div>
+            <div class="p-3.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Acessos Ativos</span>
+                <span class="text-3xl font-extrabold text-emerald-600">
+                    {{ ativos_count }}
+                </span>
+            </div>
+            <div class="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Acessos Inativos</span>
+                <span class="text-3xl font-extrabold text-rose-600">
+                    {{ inativos_count }}
+                </span>
+            </div>
+            <div class="p-3.5 bg-rose-50 text-rose-600 rounded-xl">
+                <i data-lucide="x-circle" class="w-6 h-6"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-slate-200">
+        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+            <button onclick="switchTab('clientes')" id="tab-btn-clientes" class="border-b-2 border-indigo-600 text-indigo-600 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer">
+                Clientes
+            </button>
+            <button onclick="switchTab('niveis')" id="tab-btn-niveis" class="border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer">
+                Níveis de Acesso (Planos / Cargos)
+            </button>
+        </nav>
+    </div>
+
+    <!-- CLIENTS TAB CONTENT -->
+    <div id="tab-content-clientes" class="space-y-6">
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm">Controle de Assinaturas e Pousadas</h3>
+                    <p class="text-xs text-slate-500">Ative ou desative o acesso dos clientes, configure níveis de acesso e gerencie assinaturas.</p>
+                </div>
+                <div>
+                    <button type="button" onclick="openAddClienteModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-md shadow-indigo-600/10">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Adicionar Cliente
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-4">Usuário / Dono</th>
+                            <th class="px-6 py-4">Pousada</th>
+                            <th class="px-6 py-4">Nível de Acesso</th>
+                            <th class="px-6 py-4">Assinatura (Plano)</th>
+                            <th class="px-6 py-4">Status de Acesso</th>
+                            <th class="px-6 py-4">Data de Expiração</th>
+                            <th class="px-6 py-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        {% for cliente in clientes %}
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <!-- Usuário / Dono -->
+                            <td class="px-6 py-4">
+                                <div>
+                                    <span class="font-bold text-slate-900 block">{{ cliente.user.username }}</span>
+                                    <span class="text-xs text-slate-500 block">{{ cliente.user.email }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Pousada -->
+                            <td class="px-6 py-4">
+                                {% if cliente.user.pousada %}
+                                <span class="font-semibold text-slate-700">{{ cliente.user.pousada.nome }}</span>
+                                {% else %}
+                                <span class="text-slate-400 italic">Sem Pousada</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Nível de Acesso -->
+                            <td class="px-6 py-4">
+                                {% if cliente.nivel_acesso %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                    <i data-lucide="shield" class="w-3.5 h-3.5 text-indigo-500"></i>
+                                    {{ cliente.nivel_acesso.nome }}
+                                </span>
+                                {% else %}
+                                <span class="text-slate-400 italic">Sem Nível</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Plano Ativo -->
+                            <td class="px-6 py-4">
+                                {% if cliente.plano_ativo %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/50">
+                                    Plano Ativo
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                    Sem Plano
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Acesso Ativo -->
+                            <td class="px-6 py-4">
+                                {% if cliente.ativo %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Liberado
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/50">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    Bloqueado
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Expiração -->
+                            <td class="px-6 py-4">
+                                {% if cliente.data_expiracao %}
+                                <span class="font-medium text-slate-700">{{ cliente.data_expiracao|date:"d/m/Y" }}</span>
+                                {% else %}
+                                <span class="text-slate-400 italic">Sem expiração</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Ações -->
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3.5">
+                                    <!-- Botão Ativar/Desativar Acesso -->
+                                    <form action="{% url 'admin-saas-toggle-ativo' cliente.id %}" method="POST" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg border text-xs font-bold transition-all active:scale-95 cursor-pointer
+                                            {% if cliente.ativo %}
+                                                bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200
+                                            {% else %}
+                                                bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200
+                                            {% endif %}">
+                                            {% if cliente.ativo %}Bloquear{% else %}Liberar{% endif %}
+                                        </button>
+                                    </form>
+
+                                    <!-- Botão Configurações (Modal) -->
+                                    <button type="button" onclick="openConfigModal('{{ cliente.id }}', '{{ cliente.plano_ativo|yesno:'true,false' }}', '{{ cliente.data_expiracao|date:'Y-m-d' }}', '{{ cliente.nivel_acesso.id|default:'' }}')" class="p-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg hover:border-slate-300 transition-colors cursor-pointer" title="Configurar Plano e Nível">
+                                        <i data-lucide="settings" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                                Nenhum cliente cadastrado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCESS LEVELS TAB CONTENT -->
+    <div id="tab-content-niveis" class="space-y-6 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-sm">Gerenciamento de Níveis de Acesso</h3>
+                    <p class="text-xs text-slate-500">Defina os perfis de permissão que os clientes podem ter para controlar o acesso às seções do sistema.</p>
+                </div>
+                <div>
+                    <button type="button" onclick="openAddNivelModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-md shadow-indigo-600/10">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Novo Nível de Acesso
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-4">Nome do Nível</th>
+                            <th class="px-6 py-4 text-center">Reservas (Mapa/Lista)</th>
+                            <th class="px-6 py-4 text-center">Clientes / CRM</th>
+                            <th class="px-6 py-4 text-center">Financeiro</th>
+                            <th class="px-6 py-4 text-center">Configurações</th>
+                            <th class="px-6 py-4 text-center">Governança</th>
+                            <th class="px-6 py-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        {% for nivel in niveis %}
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-900">
+                                {{ nivel.nome }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_acessar_reservas %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_acessar_crm %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_acessar_financeiro %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_acessar_configuracoes %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_acessar_governanca %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3.5">
+                                    <!-- Editar Nível -->
+                                    <button type="button" onclick="openEditNivelModal('{{ nivel.id }}', '{{ nivel.nome }}', {{ nivel.pode_acessar_reservas|yesno:'true,false' }}, {{ nivel.pode_acessar_crm|yesno:'true,false' }}, {{ nivel.pode_acessar_financeiro|yesno:'true,false' }}, {{ nivel.pode_acessar_configuracoes|yesno:'true,false' }}, {{ nivel.pode_acessar_governanca|yesno:'true,false' }})" class="p-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg hover:border-slate-300 transition-colors cursor-pointer" title="Editar Nível">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- Excluir Nível (Apenas se não for o padrão ou estiver em uso) -->
+                                    {% if nivel.id != default_nivel_id %}
+                                    <form action="{% url 'admin-saas-excluir-nivel' nivel.id %}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este nível de acesso?');" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-2 border border-rose-100 hover:bg-rose-50 text-rose-600 rounded-lg hover:border-rose-200 transition-colors cursor-pointer" title="Excluir Nível">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                Nenhum nível de acesso cadastrado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Adicionar Cliente -->
+<div id="add-cliente-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-200 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i>
+                <span>Cadastrar Novo Dono de Pousada</span>
+            </h3>
+            <button type="button" onclick="closeAddClienteModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Form -->
+        <form action="{% url 'admin-saas-criar-cliente' %}" method="POST" class="flex flex-col">
+            {% csrf_token %}
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Usuário (Username) *</label>
+                        <input type="text" id="username" name="username" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" placeholder="ex: wilian" required>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">E-mail *</label>
+                        <input type="email" id="email" name="email" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" placeholder="ex: dono@pousada.com" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Senha de Acesso *</label>
+                        <input type="password" id="password" name="password" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" placeholder="Mínimo 8 caracteres" required>
+                    </div>
+                    <div>
+                        <label for="pousada_nome" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nome da Pousada *</label>
+                        <input type="text" id="pousada_nome" name="pousada_nome" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" placeholder="ex: Pousada Sol e Mar" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="nivel_acesso" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nível de Acesso *</label>
+                        <select id="nivel_acesso" name="nivel_acesso" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                            {% for nivel in niveis %}
+                                <option value="{{ nivel.id }}" {% if nivel.id == default_nivel_id %}selected{% endif %}>{{ nivel.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="plano_ativo_add" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Plano Ativo</label>
+                        <select id="plano_ativo_add" name="plano_ativo" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                            <option value="true" selected>Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="data_expiracao_add" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Expiração (Opcional)</label>
+                    <input type="date" id="data_expiracao_add" name="data_expiracao" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeAddClienteModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer">
+                    Cadastrar Cliente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Configurar Cliente / Editar Plano -->
+<div id="config-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="settings-2" class="w-5 h-5 text-indigo-600"></i>
+                <span>Configurações do Cliente</span>
+            </h3>
+            <button type="button" onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Form -->
+        <form id="config-form" method="POST" class="flex flex-col">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="plano_ativo" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Plano Ativo</label>
+                    <select id="plano_ativo" name="plano_ativo" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="config-nivel_acesso" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nível de Acesso</label>
+                    <select id="config-nivel_acesso" name="nivel_acesso" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        {% for nivel in niveis %}
+                            <option value="{{ nivel.id }}">{{ nivel.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="data_expiracao" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Expiração (Opcional)</label>
+                    <input type="date" id="data_expiracao" name="data_expiracao" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeConfigModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Adicionar Nível de Acesso -->
+<div id="add-nivel-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600"></i>
+                <span>Novo Nível de Acesso</span>
+            </h3>
+            <button type="button" onclick="closeAddNivelModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Form -->
+        <form action="{% url 'admin-saas-criar-nivel' %}" method="POST" class="flex flex-col">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="nivel_nome" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nome do Nível / Cargo *</label>
+                    <input type="text" id="nivel_nome" name="nome" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" placeholder="ex: Plano Básico, Recepcionista" required>
+                </div>
+                
+                <div class="space-y-3 pt-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Módulos Permitidos</label>
+                    
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_acessar_reservas" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer" checked>
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Reservas (Mapa e Lista)</span>
+                            <span class="text-[10px] text-slate-500 block">Permite visualizar e criar reservas no calendário.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_acessar_crm" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer" checked>
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Clientes / CRM</span>
+                            <span class="text-[10px] text-slate-500 block">Permite gerenciar a ficha de hóspedes (FNRH).</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_acessar_financeiro" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer" checked>
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Financeiro</span>
+                            <span class="text-[10px] text-slate-500 block">Permite registrar e gerenciar pagamentos de reservas.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_acessar_configuracoes" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer" checked>
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Configurações da Pousada</span>
+                            <span class="text-[10px] text-slate-500 block">Permite gerenciar quartos, categorias e métodos de pagamento.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_acessar_governanca" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer" checked>
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Governança (Housekeeping)</span>
+                            <span class="text-[10px] text-slate-500 block">Permite visualizar o dashboard de governança e gerenciar limpezas.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeAddNivelModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer">
+                    Criar Nível
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Nível de Acesso -->
+<div id="edit-nivel-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="shield" class="w-5 h-5 text-indigo-600"></i>
+                <span>Editar Nível de Acesso</span>
+            </h3>
+            <button type="button" onclick="closeEditNivelModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Form -->
+        <form id="edit-nivel-form" method="POST" class="flex flex-col">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="edit_nivel_nome" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nome do Nível / Cargo *</label>
+                    <input type="text" id="edit_nivel_nome" name="nome" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                </div>
+                
+                <div class="space-y-3 pt-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Módulos Permitidos</label>
+                    
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_reservas" name="pode_acessar_reservas" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Reservas (Mapa e Lista)</span>
+                            <span class="text-[10px] text-slate-500 block">Permite visualizar e criar reservas no calendário.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_crm" name="pode_acessar_crm" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Clientes / CRM</span>
+                            <span class="text-[10px] text-slate-500 block">Permite gerenciar a ficha de hóspedes (FNRH).</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_financeiro" name="pode_acessar_financeiro" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Financeiro</span>
+                            <span class="text-[10px] text-slate-500 block">Permite registrar e gerenciar pagamentos de reservas.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_config" name="pode_acessar_configuracoes" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Configurações da Pousada</span>
+                            <span class="text-[10px] text-slate-500 block">Permite gerenciar quartos, categorias e métodos de pagamento.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_governanca" name="pode_acessar_governanca" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Governança (Housekeeping)</span>
+                            <span class="text-[10px] text-slate-500 block">Permite visualizar o dashboard de governança e gerenciar limpezas.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeEditNivelModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching automation
+    function switchTab(tab) {
+        const btnClientes = document.getElementById('tab-btn-clientes');
+        const btnNiveis = document.getElementById('tab-btn-niveis');
+        const contentClientes = document.getElementById('tab-content-clientes');
+        const contentNiveis = document.getElementById('tab-content-niveis');
+        
+        if (tab === 'clientes') {
+            btnClientes.className = "border-b-2 border-indigo-600 text-indigo-600 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer";
+            btnNiveis.className = "border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer";
+            contentClientes.classList.remove('hidden');
+            contentNiveis.classList.add('hidden');
+            
+            // Atualizar URL sem recarregar a página
+            const url = new URL(window.location);
+            url.searchParams.set('tab', 'clientes');
+            window.history.pushState({}, '', url);
+        } else {
+            btnNiveis.className = "border-b-2 border-indigo-600 text-indigo-600 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer";
+            btnClientes.className = "border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 px-1 pb-4 text-sm font-semibold tracking-wide transition-all cursor-pointer";
+            contentClientes.classList.add('hidden');
+            contentNiveis.classList.remove('hidden');
+            
+            // Atualizar URL sem recarregar a página
+            const url = new URL(window.location);
+            url.searchParams.set('tab', 'niveis');
+            window.history.pushState({}, '', url);
+        }
+    }
+
+    // Modal Configurar Cliente
+    function openConfigModal(id, planoAtivo, expiracao, nivelAcessoId) {
+        const modal = document.getElementById('config-modal');
+        const form = document.getElementById('config-form');
+        
+        document.getElementById('plano_ativo').value = planoAtivo;
+        document.getElementById('data_expiracao').value = expiracao || '';
+        document.getElementById('config-nivel_acesso').value = nivelAcessoId || '';
+        
+        form.action = `/painel-saas/clientes/${id}/atualizar/`;
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+        }, 10);
+    }
+    
+    function closeConfigModal() {
+        const modal = document.getElementById('config-modal');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Modal Adicionar Cliente
+    function openAddClienteModal() {
+        const modal = document.getElementById('add-cliente-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+        }, 10);
+    }
+
+    function closeAddClienteModal() {
+        const modal = document.getElementById('add-cliente-modal');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Modal Adicionar Nível de Acesso
+    function openAddNivelModal() {
+        const modal = document.getElementById('add-nivel-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+        }, 10);
+    }
+
+    function closeAddNivelModal() {
+        const modal = document.getElementById('add-nivel-modal');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Modal Editar Nível de Acesso
+    function openEditNivelModal(id, nome, reservas, crm, financeiro, config, governanca) {
+        const modal = document.getElementById('edit-nivel-modal');
+        const form = document.getElementById('edit-nivel-form');
+        
+        document.getElementById('edit_nivel_nome').value = nome;
+        document.getElementById('edit_pode_reservas').checked = reservas;
+        document.getElementById('edit_pode_crm').checked = crm;
+        document.getElementById('edit_pode_financeiro').checked = financeiro;
+        document.getElementById('edit_pode_config').checked = config;
+        document.getElementById('edit_pode_governanca').checked = governanca;
+        
+        form.action = `/painel-saas/niveis/${id}/atualizar/`;
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+        }, 10);
+    }
+
+    function closeEditNivelModal() {
+        const modal = document.getElementById('edit-nivel-modal');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Initialize Active Tab from Django view context or URL parameter
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeTab = urlParams.get('tab') || "{{ active_tab }}";
+        switchTab(activeTab);
+    });
+</script>
+{% endblock %}

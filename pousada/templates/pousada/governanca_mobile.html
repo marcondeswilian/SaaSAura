@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Governança Mobile - AuraSaaS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col pb-8">
+
+    <!-- TOP BAR -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 px-4 py-4 shadow-md flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-md">
+                G
+            </div>
+            <div>
+                <span class="text-sm font-extrabold tracking-tight block">AuraSaaS</span>
+                <span class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">Painel Operacional</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-300 font-semibold max-w-[120px] truncate">Olá, {{ request.user.username }}</span>
+            <form action="{% url 'logout' %}" method="post" id="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="p-2 bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 rounded-lg border border-slate-700/50 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <!-- CONTAINER -->
+    <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-6">
+        
+        <!-- Messages -->
+        {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+            <div class="p-3.5 rounded-xl border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %} flex items-center gap-2.5 text-xs font-semibold shadow-sm">
+                {% if message.tags == 'success' %}
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                {% else %}
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- HEADER SUMMARY -->
+        <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-indigo-950 relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl"></div>
+            <h2 class="text-lg font-black tracking-tight">Suas Tarefas de Hoje</h2>
+            <p class="text-xs text-indigo-200 mt-1">Gerencie os quartos e manutenções sob sua responsabilidade de forma rápida.</p>
+            
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <span class="text-[10px] uppercase font-bold text-slate-300 block">Atribuições</span>
+                    <span class="text-xl font-extrabold mt-0.5 block">{{ ordens|length }}</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <span class="text-[10px] uppercase font-bold text-slate-300 block">Pousada</span>
+                    <span class="text-xs font-semibold mt-1 truncate block text-indigo-300">{{ pousada.nome }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAREFAS LIST -->
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ordens de Serviço Ativas</h3>
+            
+            {% for o in ordens %}
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+                <!-- OS Info Header -->
+                <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-extrabold text-slate-900 text-base">Quarto {{ o.quarto.nome_identificacao }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase 
+                                {% if o.prioridade == 'alta' %}bg-rose-50 text-rose-700 border border-rose-100
+                                {% elif o.prioridade == 'media' %}bg-amber-50 text-amber-700 border border-amber-100
+                                {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                {{ o.get_prioridade_display }}
+                            </span>
+                        </div>
+                        <span class="text-[11px] text-slate-500 font-medium block mt-0.5">{{ o.quarto.categoria.nome }}</span>
+                    </div>
+                    
+                    <div class="text-right">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide 
+                            {% if o.status == 'pendente' %}bg-slate-100 text-slate-600
+                            {% else %}bg-indigo-50 text-indigo-700 border border-indigo-100{% endif %}">
+                            {{ o.get_status_display }}
+                        </span>
+                        <span class="text-[9px] font-semibold text-slate-400 block mt-1">OS #{{ o.id }}</span>
+                    </div>
+                </div>
+
+                <!-- OS Description -->
+                <div class="space-y-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Serviço:</span>
+                    <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-xl border border-slate-150">
+                        {% if o.tipo_servico == 'limpeza' %}
+                            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                        {% elif o.tipo_servico == 'encanamento' %}
+                            <i data-lucide="droplet" class="w-4 h-4 text-blue-600"></i>
+                        {% elif o.tipo_servico == 'eletrica' %}
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                        {% else %}
+                            <i data-lucide="wrench" class="w-4 h-4 text-slate-600"></i>
+                        {% endif %}
+                        <span class="text-xs font-bold text-slate-800">{{ o.get_tipo_servico_display }}</span>
+                    </div>
+                    {% if o.descricao %}
+                        <p class="text-xs text-slate-600 leading-relaxed mt-2 bg-slate-50/50 p-2.5 rounded-lg border border-dashed border-slate-200">{{ o.descricao }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Action Button based on Status -->
+                {% if o.status == 'pendente' %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="iniciar_ordem">
+                    <input type="hidden" name="ordem_id" value="{{ o.id }}">
+                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md shadow-indigo-600/10 cursor-pointer flex items-center justify-center gap-1.5 border border-indigo-700">
+                        <i data-lucide="play" class="w-4 h-4"></i> Iniciar Trabalho
+                    </button>
+                </form>
+                
+                {% elif o.status == 'em_andamento' %}
+                    
+                    {% if o.tipo_servico == 'limpeza' %}
+                    <!-- Checklist for Cleanings -->
+                    <form method="POST" class="space-y-4 pt-2 border-t border-slate-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="salvar_checklist">
+                        <input type="hidden" name="registro_id" value="{{ o.registro.id }}">
+
+                        <div class="space-y-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Checklist Obrigatório:</span>
+                            {% for item in o.itens_checklist %}
+                            <label class="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl active:bg-slate-100 transition-colors cursor-pointer text-xs font-semibold select-none">
+                                <input type="checkbox" name="itens_concluidos[]" value="{{ item.id }}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5 cursor-pointer mt-0.5 shrink-0" {% if item.concluido %}checked{% endif %}>
+                                <span class="text-slate-700 leading-snug mt-0.5">{{ item.checklist_item.descricao }}</span>
+                            </label>
+                            {% empty %}
+                            <p class="text-xs text-slate-400 italic">Sem tarefas de checklist para este quarto.</p>
+                            {% endfor %}
+                        </div>
+
+                        <div class="flex gap-2.5 pt-2">
+                            <button type="submit" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer text-center border border-slate-250">
+                                Salvar
+                            </button>
+                            <button type="button" onclick="confirmAndFinishLimpeza('{{ o.id }}')" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer text-center shadow-md border border-emerald-700">
+                                Concluir Limpeza
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <!-- Other services -->
+                    <form method="POST" class="pt-2 border-t border-slate-100">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="concluir_ordem">
+                        <input type="hidden" name="ordem_id" value="{{ o.id }}">
+                        <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md shadow-emerald-600/10 cursor-pointer flex items-center justify-center gap-1.5 border border-emerald-700">
+                            <i data-lucide="check" class="w-4 h-4"></i> Finalizar Serviço
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="flex flex-col items-center justify-center p-10 bg-slate-150/40 border border-dashed border-slate-300 rounded-2xl text-center text-slate-400">
+                <i data-lucide="sparkles" class="w-10 h-10 mb-2 text-indigo-400 animate-pulse"></i>
+                <p class="text-xs font-extrabold text-slate-500">Tudo limpo e consertado!</p>
+                <p class="text-[10px] text-slate-400 mt-1">Não há nenhuma ordem de serviço atribuída a você no momento.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+    </main>
+
+    <!-- HIDDEN FORM FOR MOB CONCLUIR ORDEM -->
+    <form id="mob-concluir-form" method="POST" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="concluir_ordem">
+        <input type="hidden" id="mob-concluir-ordem-id" name="ordem_id" value="">
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+        
+        function confirmAndFinishLimpeza(ordemId) {
+            if(confirm('Deseja concluir a limpeza e liberar o quarto?')) {
+                document.getElementById('mob-concluir-ordem-id').value = ordemId;
+                document.getElementById('mob-concluir-form').submit();
+            }
+        }
+    </script>
+</body>
+</html>

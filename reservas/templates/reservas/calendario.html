@@ -1,0 +1,335 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Mapa de Reservas - AuraSaaS{% endblock %}
+{% block header_title %}Mapa e Calendário de Reservas{% endblock %}
+
+{% block extra_css %}
+    @import url('https://unpkg.com/tippy.js@6/dist/tippy.css');
+
+    /* Custom spacing and styles for FullCalendar standard layout */
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: #e2e8f0 !important;
+    }
+
+    .fc-datagrid-cell, .fc-timeline-lane {
+        background-color: #ffffff;
+    }
+
+    /* Fundo suave para a barra que agrupa as categorias dos quartos */
+    .fc-resource-group td {
+        background-color: #f1f5f9 !important;
+        font-weight: bold;
+        color: #1e293b !important;
+    }
+
+    /* Trava a altura dos quadros internos para garantir alinhamento perfeito (esq/dir) ignorando bordas de tabela */
+    .fc-datagrid-cell-frame, .fc-timeline-lane-frame, .fc-datagrid-cell {
+        height: 56px !important;
+    }
+
+    /* Anula o empilhamento do FullCalendar, travando todas as reservas na exata mesma linha */
+    .fc-timeline-event-harness {
+        top: 10px !important;
+        bottom: auto !important;
+    }
+
+    /* Centraliza e estiliza as barras das reservas */
+    .fc-timeline-event {
+        height: 36px !important;
+        margin-top: 3px !important;
+        margin-bottom: 3px !important;
+        /* Efeito Rascunho: Corta as pontas na diagonal (Paralelogramo) */
+        clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%) !important;
+        border-radius: 0 !important; /* Sem bordas arredondadas para o corte ficar afiado */
+        border: none !important; /* Removemos a borda para o design ficar focado na diagonal */
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Eventos com saldo devedor pendente: borda tracejada vermelha espessa */
+    .fc-timeline-event.has-debt {
+        border: 2px dashed #ef4444 !important;
+    }
+
+    /* Estilo premium do Tippy Tooltip */
+    .tippy-box {
+        background-color: #0f172a !important; /* slate-900 */
+        border: 1px solid #334155 !important; /* slate-700 */
+        border-radius: 8px !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+    }
+    .tippy-arrow {
+        color: #0f172a !important;
+    }
+
+    /* FORMATAÇÃO DO CABEÇALHO DUPLO */
+    /* Linha de cima: Dia da semana pequeno, azul e em maiúsculo */
+    .fc-timeline-header-row:nth-child(1) .fc-timeline-slot-cushion {
+        font-size: 10px !important;
+        text-transform: uppercase !important;
+        color: #3b82f6 !important;
+        font-weight: bold !important;
+        text-decoration: none !important;
+    }
+    /* Linha de baixo: Número do dia grande e escuro */
+    .fc-timeline-header-row:nth-child(2) .fc-timeline-slot-cushion {
+        font-size: 16px !important;
+        font-weight: bold !important;
+        color: #1e293b !important;
+        text-decoration: none !important;
+    }
+
+    /* Customizing FullCalendar buttons and controls for light mode */
+    .fc .fc-button-primary {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+        font-weight: 500 !important;
+        padding: 0.4rem 0.8rem !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        text-transform: capitalize !important;
+    }
+
+    .fc .fc-button-primary:hover {
+        background-color: #f8fafc !important;
+        border-color: #94a3b8 !important;
+    }
+
+    .fc .fc-button-primary:disabled {
+        background-color: #f1f5f9 !important;
+        color: #94a3b8 !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    .fc .fc-button-active {
+        background-color: #cbd5e1 !important;
+        border-color: #94a3b8 !important;
+        color: #0f172a !important;
+    }
+
+    .fc .fc-toolbar-title {
+        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .fc-header-toolbar { flex-direction: column; gap: 10px; }
+        .fc-toolbar-chunk { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
+    }
+{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+    <!-- Legends Bar -->
+    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Mapa de Ocupação dos Quartos</h2>
+            <p class="text-xs text-slate-500">Veja o mapa de reservas e clique nos blocos para ver detalhes ou arraste para reposicionar.</p>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-semibold bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+            <span class="text-slate-400 uppercase tracking-wider">Legenda:</span>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#10b981] inline-block"></span>
+                <span class="text-slate-700">Confirmada</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#f59e0b] inline-block"></span>
+                <span class="text-slate-700">Pendente</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#64748b] inline-block"></span>
+                <span class="text-slate-700">Cancelada</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Div -->
+    <div id='calendar' class="overflow-x-auto"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- FullCalendar JS Scheduler Script -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.11/index.global.min.js'></script>
+    <!-- Popper.js and Tippy.js for Tooltips -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script>
+        // Função para obter o CSRF token do Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Função para atualizar a reserva no banco de dados via PATCH
+        function atualizarReserva(info) {
+            const event = info.event;
+            const checkin = event.start.toISOString().split('T')[0];
+            const checkout = event.end ? event.end.toISOString().split('T')[0] : event.start.toISOString().split('T')[0];
+            const resource = event.getResources()[0];
+            const quartoId = resource ? resource.id : null;
+
+            if (!quartoId) {
+                showToast("Erro: O quarto associado é inválido.", "error");
+                info.revert();
+                return;
+            }
+
+            fetch(`/api/reservas/${event.id}/update/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    data_checkin: checkin,
+                    data_checkout: checkout,
+                    quarto: quartoId
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Falha ao atualizar a reserva no servidor.');
+                }
+                showToast("Reserva atualizada com sucesso!");
+            })
+            .catch(error => {
+                console.error(error);
+                showToast("Não foi possível salvar a alteração da reserva. Revertendo...", "error");
+                info.revert();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var isMobile = window.innerWidth < 768;
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+                initialView: isMobile ? 'quinze' : 'trinta',
+                locale: 'pt-br',
+                timeZone: 'local',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'quinze,trinta'
+                },
+                views: {
+                    quinze: { type: 'resourceTimeline', duration: { days: 15 }, buttonText: '15d', slotMinWidth: 60, slotDuration: '24:00:00' },
+                    trinta: { type: 'resourceTimeline', duration: { days: 30 }, buttonText: '30d', slotMinWidth: 35, slotDuration: '24:00:00' }
+                },
+                resources: '/api/quartos/',
+                events: '/api/reservas/',
+                resourceGroupField: 'categoria',
+                resourceAreaWidth: isMobile ? '35%' : '15%',
+                resourceAreaHeaderContent: 'Quartos',
+                nowIndicator: true,
+                snapDuration: '01:00:00',
+                eventDisplay: 'block',
+                eventOverlap: false,
+                displayEventTime: false,
+                editable: true,
+                resourceEditable: true,
+                eventDurationEditable: true,
+                selectable: true,
+                slotLabelFormat: [
+                    { weekday: 'short' }, // Linha 1: qua, qui, sex
+                    { day: '2-digit' }    // Linha 2: 03, 04, 05
+                ],
+                eventContent: function(arg) {
+                    return { 
+                        html: "<div style='overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85em; padding: 2px 4px; font-weight: bold; width: 100%; box-sizing: border-box;'>" + arg.event.title + "</div>" 
+                    };
+                },
+                eventDataTransform: function(eventData) {
+                    // Mapeia as cores conforme o status
+                    if (eventData.is_bloqueio) {
+                        eventData.backgroundColor = eventData.color || '#475569';
+                    } else {
+                        if (eventData.status === 'confirmada') {
+                            eventData.backgroundColor = '#10b981'; // bg-emerald-500
+                        } else if (eventData.status === 'pendente') {
+                            eventData.backgroundColor = '#f59e0b'; // bg-amber-500
+                        } else if (eventData.status === 'cancelada') {
+                            eventData.backgroundColor = '#64748b'; // bg-slate-500
+                        } else {
+                            eventData.backgroundColor = '#3b82f6'; // default blue
+                        }
+                    }
+                    eventData.borderColor = eventData.backgroundColor;
+                    
+                    // Adiciona classe CSS condicional se saldo_devedor > 0
+                    eventData.classNames = eventData.classNames || [];
+                    if (!eventData.is_bloqueio && parseFloat(eventData.saldo_devedor || 0) > 0) {
+                        eventData.classNames.push('has-debt');
+                    }
+                    return eventData;
+                },
+                eventDidMount: function(info) {
+                    // Se o evento for um bloqueio, mostra um tooltip simples
+                    if (info.event.extendedProps.is_bloqueio) {
+                        tippy(info.el, {
+                            content: `<strong>Bloqueio</strong><br>Motivo: ${info.event.title}`,
+                            allowHTML: true,
+                            placement: 'top',
+                            animation: 'fade'
+                        });
+                        return;
+                    }
+
+                    // Obter propriedades estendidas
+                    const props = info.event.extendedProps;
+                    const hospedeNome = props.hospede_nome || info.event.title || 'Não informado';
+                    const celularVal = props.celular || 'Não informado';
+                    const valorTotalVal = parseFloat(props.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    const saldoDevedorVal = parseFloat(props.saldo_devedor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    const hasDebt = parseFloat(props.saldo_devedor || 0) > 0;
+
+                    const tooltipContent = `
+                        <div class="p-2 space-y-1 text-xs text-slate-100">
+                            <div class="font-bold border-b border-slate-700 pb-1 mb-1 text-sm">${hospedeNome}</div>
+                            <div><strong>Celular:</strong> ${celularVal}</div>
+                            <div><strong>Valor Total:</strong> ${valorTotalVal}</div>
+                            <div class="${hasDebt ? 'text-rose-400 font-semibold' : 'text-emerald-400'}">
+                                <strong>Saldo Devedor:</strong> ${saldoDevedorVal}
+                            </div>
+                        </div>
+                    `;
+
+                    tippy(info.el, {
+                        content: tooltipContent,
+                        allowHTML: true,
+                        placement: 'top',
+                        animation: 'fade'
+                    });
+                },
+                select: function(info) {
+                    if (info.resource) {
+                        window.location.href = '/painel/reservas/?room_id=' + info.resource.id + '&start_date=' + info.startStr;
+                    }
+                },
+                eventClick: function(info) {
+                    window.location.href = '/painel/reservas/' + info.event.id + '/editar/';
+                },
+                eventDrop: function(info) {
+                    atualizarReserva(info);
+                },
+                eventResize: function(info) {
+                    atualizarReserva(info);
+                }
+            });
+            calendar.render();
+        });
+    </script>
+{% endblock %}

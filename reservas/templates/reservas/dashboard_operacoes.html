@@ -1,0 +1,157 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Dashboard de Operações - AuraSaaS{% endblock %}
+
+{% block header_title %}Painel de Operações{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-6xl mx-auto">
+    <!-- Header Hero Card -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 shadow-xl border border-slate-800">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <span class="text-[10px] text-indigo-400 font-extrabold uppercase tracking-widest bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">Resumo Diário</span>
+                <h2 class="text-2xl font-black text-white tracking-tight mt-3">Operações da Pousada: {{ pousada.nome }}</h2>
+                <p class="mt-1 text-slate-400 text-sm max-w-xl">
+                    Tenha o controle imediato do seu dia. Acompanhe a ocupação em tempo real, receitas confirmadas e execute ações de check-in, check-out e manutenção pendentes.
+                </p>
+            </div>
+            
+            <div class="bg-white/5 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 text-xs font-semibold text-slate-300">
+                <span class="text-slate-400 block text-[9px] uppercase tracking-wider mb-0.5">Hoje é:</span>
+                <span class="font-bold text-white text-xs">{% now "d \d\e F \d\e Y" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARDS GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- CARD 1: OCUPAÇÃO -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-36 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ocupação Atual</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                    <i data-lucide="hotel" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-2xl font-extrabold text-slate-900 block tracking-tight">{{ ocupacao_porcentagem }}%</span>
+                <span class="text-[10px] font-semibold text-slate-400 mt-1 block">Quartos ocupados hoje</span>
+            </div>
+        </div>
+
+        <!-- CARD 2: RECEITA DO DIA -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-36 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Receita do Dia</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                    <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-2xl font-extrabold text-slate-900 block tracking-tight">R$ {{ receita_dia }}</span>
+                <span class="text-[10px] font-semibold text-emerald-600 mt-1 block">Total confirmado hoje</span>
+            </div>
+        </div>
+
+        <!-- CARD 3: CHECK-INS PREVISTOS -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-36 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-colors"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Check-ins de Hoje</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-2xl font-extrabold text-slate-900 block tracking-tight">{{ checkins_previstos_count }}</span>
+                <span class="text-[10px] font-semibold text-slate-400 mt-1 block">Chegadas pendentes hoje</span>
+            </div>
+        </div>
+
+        <!-- CARD 4: CHECK-OUTS PENDENTES -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-36 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Check-outs de Hoje</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-2xl font-extrabold text-slate-900 block tracking-tight">{{ checkouts_pendentes_count }}</span>
+                <span class="text-[10px] font-semibold text-slate-400 mt-1 block">Saídas pendentes hoje</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TIMELINE / AÇÕES IMEDIATAS -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                </span>
+                <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider">Ações Imediatas & Pendências</h3>
+            </div>
+            <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[10px] font-bold">{{ acoes_imediatas|length }} pendências</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+            {% for acao in acoes_imediatas %}
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                
+                <!-- Action Content -->
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border
+                        {% if acao.tipo == 'checkin' %}bg-indigo-50 border-indigo-100 text-indigo-600
+                        {% elif acao.tipo == 'limpeza' %}bg-purple-50 border-purple-100 text-purple-600
+                        {% else %}bg-amber-50 border-amber-100 text-amber-600{% endif %}">
+                        {% if acao.tipo == 'checkin' %}
+                            <i data-lucide="user-plus" class="w-5 h-5"></i>
+                        {% elif acao.tipo == 'limpeza' %}
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        {% else %}
+                            <i data-lucide="wrench" class="w-5 h-5"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <div class="flex items-center flex-wrap gap-2">
+                            <span class="font-extrabold text-slate-800 text-sm">{{ acao.titulo }}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide
+                                {% if acao.prioridade == 'alta' %}bg-rose-50 text-rose-700 border border-rose-100
+                                {% elif acao.prioridade == 'media' %}bg-amber-50 text-amber-700 border border-amber-100
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ acao.badge }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 font-medium max-w-2xl leading-relaxed">{{ acao.descricao }}</p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <a href="{{ acao.link }}" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-indigo-50 border border-slate-250 hover:border-indigo-100 hover:text-indigo-700 text-slate-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer whitespace-nowrap">
+                    Resolver Pendência
+                </a>
+
+            </div>
+            {% empty %}
+            <div class="flex flex-col items-center justify-center p-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                <i data-lucide="smile" class="w-12 h-12 mb-3 text-indigo-400"></i>
+                <p class="text-xs font-extrabold text-slate-600">Nenhuma pendência ativa para hoje!</p>
+                <p class="text-[10px] text-slate-400 mt-1">A pousada está com as operações 100% atualizadas e em dia.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
