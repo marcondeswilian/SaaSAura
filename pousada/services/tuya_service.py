@@ -43,10 +43,7 @@ class TuyaLockService:
             self.region = None
             self.base_url = None
 
-    def gerar_senha_com_prefixo(self, sufixo):
-        prefixo = "101"
-        if self.config and hasattr(self.config, 'prefixo_pin_padrao') and self.config.prefixo_pin_padrao:
-            prefixo = self.config.prefixo_pin_padrao
+    def gerar_senha_com_prefixo(self, sufixo, prefixo="101"):
         return f"{prefixo}{sufixo}"
 
     def _get_timestamp(self):

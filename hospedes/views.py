@@ -54,6 +54,12 @@ def hospede_criar_view(request):
 
     if request.method == 'POST':
         nome_completo = request.POST.get('nome_completo')
+        if not nome_completo or not nome_completo.strip():
+            messages.error(request, 'O campo Nome Completo é obrigatório.')
+            return render(request, 'hospedes/hospede_form.html', {
+                'tags_pousada': tags_pousada,
+                'action': 'Criar'
+            })
         email = request.POST.get('email')
         telefone = request.POST.get('telefone')
         cpf = request.POST.get('cpf')
@@ -71,7 +77,7 @@ def hospede_criar_view(request):
             try:
                 data_nascimento = datetime.strptime(data_nascimento_str, '%Y-%m-%d').date()
             except ValueError:
-                pass
+                messages.warning(request, 'Data de nascimento inválida, campo ignorado.')
 
         hospede = Hospede.objects.create(
             pousada=pousada,
@@ -126,7 +132,12 @@ def hospede_editar_view(request, pk):
             messages.success(request, 'Hóspede excluído com sucesso.')
             return redirect('hospede-lista')
 
-        hospede.nome_completo = request.POST.get('nome_completo')
+        nome_completo = request.POST.get('nome_completo')
+        if not nome_completo or not nome_completo.strip():
+            messages.error(request, 'O campo Nome Completo é obrigatório.')
+            return redirect('hospede-editar', pk=pk)
+
+        hospede.nome_completo = nome_completo
         hospede.email = request.POST.get('email')
         hospede.telefone = request.POST.get('telefone')
         hospede.cpf = request.POST.get('cpf')
@@ -143,7 +154,7 @@ def hospede_editar_view(request, pk):
             try:
                 hospede.data_nascimento = datetime.strptime(data_nascimento_str, '%Y-%m-%d').date()
             except ValueError:
-                hospede.data_nascimento = None
+                messages.warning(request, 'Data de nascimento inválida, campo ignorado.')
         else:
             hospede.data_nascimento = None
 

@@ -12,6 +12,12 @@ class Pousada(models.Model):
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
     usa_checklist_limpeza = models.BooleanField(default=False)
     whatsapp_recepcao = models.CharField(max_length=20, blank=True, null=True)
+    prefixo_pin_padrao = models.CharField(max_length=3, default="101")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.nome)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nome
@@ -21,6 +27,9 @@ class CategoriaQuarto(models.Model):
     nome = models.CharField(max_length=100) # Ex: Suíte, Standard, Deluxe
     valor_diaria = models.DecimalField(max_digits=10, decimal_places=2)
     capacidade = models.IntegerField(default=2)
+
+    class Meta:
+        unique_together = ('pousada', 'nome')
 
     def __str__(self):
         return f"{self.nome} - R$ {self.valor_diaria}"
@@ -33,7 +42,8 @@ class Quarto(models.Model):
     status_limpeza = models.CharField(
         max_length=20, 
         choices=[('sujo', 'Sujo'), ('em_limpeza', 'Em Limpeza'), ('limpo', 'Limpo')], 
-        default='limpo'
+        default='limpo',
+        db_index=True
     )
 
     def __str__(self):
@@ -105,7 +115,8 @@ class OrdemServico(models.Model):
             ('encanamento', 'Encanamento'),
             ('eletrica', 'Elétrica'),
             ('outros', 'Outros')
-        ]
+        ],
+        db_index=True
     )
     prioridade = models.CharField(
         max_length=15,
@@ -124,7 +135,8 @@ class OrdemServico(models.Model):
             ('em_andamento', 'Em Andamento'),
             ('concluido', 'Concluído')
         ],
-        default='pendente'
+        default='pendente',
+        db_index=True
     )
     criado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ordens_criadas')
     responsavel = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ordens_atribuidas')
@@ -149,7 +161,8 @@ class RegistroLimpeza(models.Model):
     status = models.CharField(
         max_length=20, 
         choices=[('sujo', 'Sujo'), ('em_limpeza', 'Em Limpeza'), ('limpo', 'Limpo')], 
-        default='sujo'
+        default='sujo',
+        db_index=True
     )
     reserva_relacionada = models.ForeignKey('reservas.Reserva', on_delete=models.SET_NULL, null=True, blank=True, related_name='registros_limpeza')
     ordem_servico = models.OneToOneField(OrdemServico, on_delete=models.CASCADE, null=True, blank=True, related_name='registro_limpeza')
@@ -181,7 +194,6 @@ class ConfiguracaoTuya(models.Model):
     access_id = models.CharField(max_length=100)
     access_secret = models.CharField(max_length=100)
     region = models.CharField(max_length=50, default='western_america')
-    prefixo_pin_padrao = models.CharField(max_length=3, default="101")
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

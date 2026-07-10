@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.db import transaction
+from decimal import Decimal, InvalidOperation
 import json
 import csv
 
@@ -30,7 +31,9 @@ class ReservaListAPI(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Reserva.objects.filter(pousada__dono=self.request.user)
+        return Reserva.objects.filter(
+            pousada__dono=self.request.user
+        ).select_related('hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio')
 
 # Esta view vai listar todos os quartos em formato JSON
 class QuartoListAPI(generics.ListAPIView):
@@ -38,7 +41,7 @@ class QuartoListAPI(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Quarto.objects.filter(pousada__dono=self.request.user)
+        return Quarto.objects.filter(pousada__dono=self.request.user).select_related('categoria')
 
 
 @login_required
@@ -65,7 +68,7 @@ def api_quartos_disponiveis(request):
     ).values_list('quarto_id', flat=True)
 
     # Filtrar os quartos livres
-    quartos_livres = Quarto.objects.filter(pousada=pousada, ativo=True).exclude(id__in=ocupados_ids)
+    quartos_livres = Quarto.objects.filter(pousada=pousada, ativo=True).exclude(id__in=ocupados_ids).select_related('categoria')
 
     data = [
         {
@@ -109,8 +112,10 @@ def reserva_lista_view(request):
     except Exception:
         return render(request, 'reservas/lista_reservas.html', {'error': 'Você não possui uma pousada vinculada ao seu usuário.'})
         
-    reservas = Reserva.objects.filter(pousada=pousada).order_by('data_checkin')
-    quartos = Quarto.objects.filter(pousada=pousada, ativo=True)
+    reservas = Reserva.objects.filter(pousada=pousada).select_related(
+        'hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio'
+    ).order_by('data_checkin')
+    quartos = Quarto.objects.filter(pousada=pousada, ativo=True).select_related('categoria')
     reservas_confirmadas_count = reservas.filter(status='confirmada').count()
     from pousada.models import MetodoPagamentoConfig
     metodos_pagamento = MetodoPagamentoConfig.objects.filter(pousada=pousada, ativo=True).order_by('nome')
@@ -151,14 +156,14 @@ def reserva_criar_view(request):
             try:
                 motivo = MotivoBloqueio.objects.get(id=motivo_bloqueio_id, pousada=pousada)
                 nome_grupo = f"Bloqueio Grupo - {motivo.nome} ({data_checkin})"
-            except:
+            except Exception:
                 nome_grupo = f"Bloqueio Grupo ({data_checkin})"
         else:
             hospede_id = request.POST.get('hospede')
             try:
                 hospede = Hospede.objects.get(id=hospede_id, pousada=pousada)
                 nome_grupo = f"Grupo - {hospede.nome_completo} ({data_checkin})"
-            except:
+            except Exception:
                 nome_grupo = f"Grupo ({data_checkin})"
         
         grupo = Grupo.objects.create(nome=nome_grupo)
@@ -221,14 +226,14 @@ def reserva_criar_view(request):
     try:
         hospede = Hospede.objects.get(id=hospede_id, pousada=pousada)
 
-        total_val = float(valor_total)
+        total_val = Decimal(valor_total)
         valor_sinal_str = request.POST.get('valor_sinal', '0')
         metodo_pagamento_sinal = request.POST.get('metodo_pagamento_sinal', 'pix')
-        valor_sinal = 0.00
+        valor_sinal = Decimal('0.00')
         if valor_sinal_str:
             try:
-                valor_sinal = float(valor_sinal_str)
-            except ValueError:
+                valor_sinal = Decimal(valor_sinal_str)
+            except (ValueError, InvalidOperation):
                 pass
 
         tipo_cobranca = request.POST.get('tipo_cobranca', 'unica')
@@ -254,9 +259,16 @@ def reserva_criar_view(request):
                 # Calcular o valor individual desta reserva com base na regra de cobrança
                 if len(room_ids) > 1:
                     if tipo_cobranca == 'dividido':
-                        valor_reserva = total_val / len(room_ids)
+                        # Divisão precisa com Decimal: distribui resto para a primeira reserva
+                        n = len(room_ids)
+                        valor_base = (total_val / n).quantize(Decimal('0.01'))
+                        if idx == 0:
+                            # Primeira reserva absorve a diferença de arredondamento
+                            valor_reserva = total_val - (valor_base * (n - 1))
+                        else:
+                            valor_reserva = valor_base
                     else:  # 'unica'
-                        valor_reserva = total_val if idx == 0 else 0.00
+                        valor_reserva = total_val if idx == 0 else Decimal('0.00')
                 else:
                     valor_reserva = total_val
 
@@ -386,7 +398,7 @@ def exportar_fnrh_csv(request):
 
     # Gravar dados e coletar IDs para bulk_update
     ids_exportados = []
-    for r in reservas:
+    for r in reservas.select_related('hospede'):
         h = r.hospede
         if not h:
             continue
@@ -451,8 +463,23 @@ def reserva_editar_view(request, pk):
             messages.error(request, 'Preencha todos os campos obrigatórios.')
         else:
             try:
+                novo_quarto = Quarto.objects.get(id=quarto_id, pousada=pousada)
+                
+                # BUG-C06: Verificar conflito de quarto na edição
+                if int(quarto_id) != reserva.quarto_id or data_checkin != str(reserva.data_checkin) or data_checkout != str(reserva.data_checkout):
+                    conflito = Reserva.objects.filter(
+                        quarto_id=quarto_id,
+                        pousada=pousada,
+                        data_checkout__gt=data_checkin,
+                        data_checkin__lt=data_checkout,
+                        status__in=['pendente', 'confirmada']
+                    ).exclude(id=reserva.id).exists()
+                    if conflito:
+                        messages.error(request, 'Este quarto já está reservado no período selecionado.')
+                        return redirect('reserva-editar', pk=reserva.id)
+                
                 reserva.hospede = Hospede.objects.get(id=hospede_id, pousada=pousada)
-                reserva.quarto = Quarto.objects.get(id=quarto_id, pousada=pousada)
+                reserva.quarto = novo_quarto
                 reserva.data_checkin = data_checkin
                 reserva.data_checkout = data_checkout
                 reserva.valor_total = valor_total
@@ -460,6 +487,10 @@ def reserva_editar_view(request, pk):
                 reserva.save()
                 messages.success(request, 'Reserva atualizada com sucesso!')
                 return redirect('reserva-lista')
+            except Quarto.DoesNotExist:
+                messages.error(request, 'Quarto selecionado não encontrado.')
+            except Hospede.DoesNotExist:
+                messages.error(request, 'Hóspede selecionado não encontrado.')
             except Exception as e:
                 messages.error(request, f'Erro ao salvar alterações: {str(e)}')
                 
@@ -591,14 +622,14 @@ def dashboard_view(request):
         return redirect('reserva-lista')
 
     # Get local current time/date
-    today = timezone.localtime().date()
+    today = timezone.localdate()
 
     # Load rooms, reservations, payments, and service orders in batch to prevent N+1 queries
     quartos = Quarto.objects.filter(pousada=pousada, ativo=True).select_related('categoria')
     
     reservas_ativas = Reserva.objects.filter(
         pousada=pousada,
-        status__in=['pendente', 'confirmada', 'finalizada']
+        status__in=['pendente', 'sinal', 'confirmada', 'finalizada']
     ).select_related('quarto', 'hospede')
 
     ordens_ativas = OrdemServico.objects.filter(
@@ -611,7 +642,9 @@ def dashboard_view(request):
     quartos_ocupados_ids = set()
     for r in reservas_ativas:
         if r.status in ['confirmada', 'finalizada'] and not r.is_bloqueio:
-            if r.data_checkin <= today < r.data_checkout:
+            r_checkin_date = r.data_checkin.date() if hasattr(r.data_checkin, 'date') else r.data_checkin
+            r_checkout_date = r.data_checkout.date() if hasattr(r.data_checkout, 'date') else r.data_checkout
+            if r_checkin_date <= today < r_checkout_date:
                 quartos_ocupados_ids.add(r.quarto_id)
     ocupacao_count = len(quartos_ocupados_ids)
     ocupacao_porcentagem = (ocupacao_count / total_quartos * 100) if total_quartos > 0 else 0
@@ -624,11 +657,16 @@ def dashboard_view(request):
     ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
 
     # 3. Check-ins Previstos (Hoje)
-    checkins_hoje = [r for r in reservas_ativas if r.data_checkin == today and not r.checkin_concluido and r.status != 'cancelada']
+    checkins_hoje = [
+        r for r in reservas_ativas 
+        if (r.data_checkin.date() if hasattr(r.data_checkin, 'date') else r.data_checkin) == today 
+        and r.status in ['pendente', 'sinal', 'confirmada'] 
+        and not r.is_bloqueio
+    ]
     checkins_previstos_count = len(checkins_hoje)
 
     # 4. Check-outs Pendentes (Hoje)
-    checkouts_hoje = [r for r in reservas_ativas if r.data_checkout == today and r.status == 'confirmada']
+    checkouts_hoje = [r for r in reservas_ativas if r.data_checkout == today and r.status == 'confirmada' and not r.is_bloqueio]
     checkouts_pendentes_count = len(checkouts_hoje)
 
     # 5. Timeline / Ações Imediatas
@@ -774,7 +812,8 @@ def portal_hospede(request, token):
         if tem_fechadura and pin_sufixo and pin_sufixo.isdigit() and len(pin_sufixo) == 4:
             from pousada.services.tuya_service import TuyaLockService
             service = TuyaLockService()
-            senha_final = service.gerar_senha_com_prefixo(pin_sufixo)
+            prefixo = reserva.pousada.prefixo_pin_padrao or "101"
+            senha_final = service.gerar_senha_com_prefixo(pin_sufixo, prefixo=prefixo)
             reserva.senha_fechadura = senha_final
 
             from datetime import datetime as dt, time as dtime

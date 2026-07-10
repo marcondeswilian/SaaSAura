@@ -7,6 +7,10 @@ class Tag(models.Model):
     cor = models.CharField(max_length=7, default='#3b82f6')
     tipo = models.CharField(max_length=10, choices=[('H', 'Hóspede'), ('R', 'Reserva')], default='H')
 
+    class Meta:
+        ordering = ['nome']
+        unique_together = ('pousada', 'nome')
+
     def __str__(self):
         return f"{self.nome} ({self.pousada.nome})"
 
@@ -16,7 +20,7 @@ class Hospede(models.Model):
 
     
     # Campos Padrão FNRH
-    nome_completo = models.CharField(max_length=255)
+    nome_completo = models.CharField(max_length=255, db_index=True)
     data_nascimento = models.DateField(null=True, blank=True)
     nacionalidade = models.CharField(max_length=100, default='Brasileiro(a)')
     sexo = models.CharField(max_length=20, choices=[('M', 'Masculino'), ('F', 'Feminino'), ('O', 'Outro')], null=True, blank=True)
@@ -24,7 +28,7 @@ class Hospede(models.Model):
     numero_documento = models.CharField(max_length=50, null=True, blank=True)
     
     # Novos Campos FNRH da Fase 4
-    cpf = models.CharField(max_length=20, null=True, blank=True)
+    cpf = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     genero = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Feminino'), ('O', 'Outro')], null=True, blank=True)
     profissao = models.CharField(max_length=100, null=True, blank=True)
     cep = models.CharField(max_length=20, null=True, blank=True)
@@ -33,8 +37,8 @@ class Hospede(models.Model):
     estado = models.CharField(max_length=100, null=True, blank=True)
     
     # Contato e Endereço
-    telefone = models.CharField(max_length=20, null=True, blank=True)
-    email = models.EmailField(null=True, blank=True)
+    telefone = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+    email = models.EmailField(null=True, blank=True, db_index=True)
     endereco_completo = models.TextField(null=True, blank=True)
     
     # Campo FLEXÍVEL para futuras mudanças da FNRH (Ex: Nome social, placa veículo)
@@ -52,6 +56,13 @@ class Hospede(models.Model):
         if not num_limpo.startswith('55') and len(num_limpo) >= 10:
             num_limpo = f"55{num_limpo}"
         return f"https://wa.me/{num_limpo}"
+
+    class Meta:
+        ordering = ['nome_completo']
+        indexes = [
+            models.Index(fields=['pousada', 'nome_completo']),
+            models.Index(fields=['pousada', 'cpf']),
+        ]
 
     def __str__(self):
         return self.nome_completo

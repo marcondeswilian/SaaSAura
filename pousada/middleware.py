@@ -10,9 +10,9 @@ class CurrentUserMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        _thread_locals.user = getattr(request, 'user', None)
-        response = self.get_response(request)
-        # Limpar para evitar vazamento de memória
-        if hasattr(_thread_locals, 'user'):
-            del _thread_locals.user
+        _thread_locals.user = request.user
+        try:
+            response = self.get_response(request)
+        finally:
+            _thread_locals.user = None
         return response

@@ -28,12 +28,12 @@
         <div class="bg-gradient-to-b from-indigo-950/80 to-slate-950 px-6 pt-8 pb-6 border-b border-indigo-950/40 relative">
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent pointer-events-none"></div>
             
-            <div class="flex items-center justify-between relative z-10">
+            <div class="flex flex-col items-center justify-center text-center gap-3 relative z-10">
                 {% if pousada.logo %}
-                    <img src="{{ pousada.logo.url }}" alt="{{ pousada.nome }}" class="h-10 object-contain rounded-lg">
+                    <img src="{{ pousada.logo.url }}" alt="{{ pousada.nome }}" class="h-16 object-contain rounded-lg shadow-md">
                 {% else %}
-                    <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-600/30">
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
                             {{ pousada.nome|slice:":1"|upper }}
                         </div>
                         <span class="heading-font text-lg font-bold text-white tracking-tight">{{ pousada.nome }}</span>
@@ -234,9 +234,27 @@
 
                             {% if tem_fechadura %}
                             <div class="pt-2 border-t border-slate-800/50">
-                                <label for="pin_sufixo" class="block text-[11px] font-medium text-slate-400 mb-1">Crie uma senha de 4 dígitos para a porta <span class="text-rose-500">*</span></label>
-                                <input type="text" pattern="[0-9]{4}" inputmode="numeric" maxlength="4" id="pin_sufixo" name="pin_sufixo" placeholder="••••" required class="w-full px-3.5 py-3 bg-slate-950 border border-slate-800/80 rounded-xl text-white text-center text-xl font-bold tracking-[0.4em] focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
-                                <p class="text-[10px] text-slate-500 mt-1.5 leading-normal">Escolha 4 números de sua preferência. Esta será a senha de acesso ao seu quarto.</p>
+                                <label for="pin_sufixo" class="block text-[11px] font-semibold text-slate-400 mb-2">Crie uma senha de 4 dígitos para a porta <span class="text-rose-500">*</span></label>
+                                
+                                <!-- Visual layout: prefix, 4-digit input, hash -->
+                                <div class="flex items-center justify-center gap-3">
+                                    <div class="px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-indigo-400 font-bold text-xl select-none" title="Código da pousada">
+                                        {{ reserva.pousada.prefixo_pin_padrao }}
+                                    </div>
+                                    <div class="flex-1 max-w-[150px]">
+                                        <input type="text" pattern="[0-9]{4}" inputmode="numeric" maxlength="4" id="pin_sufixo" name="pin_sufixo" placeholder="••••" required class="w-full px-3.5 py-3 bg-slate-950 border border-slate-800/80 rounded-xl text-white text-center text-xl font-bold tracking-[0.4em] focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
+                                    </div>
+                                    <div class="px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-indigo-400 font-bold text-xl select-none">
+                                        #
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-left">
+                                    <p class="text-xs font-semibold text-indigo-300">Como usar a fechadura:</p>
+                                    <p class="text-[11px] text-slate-400 mt-1 leading-normal">
+                                        Sua senha completa será o código da pousada + seus 4 números. <strong class="text-indigo-400">IMPORTANTE:</strong> Para abrir a porta, você deve digitar a senha completa e apertar a tecla <b>#</b> no final.
+                                    </p>
+                                </div>
                             </div>
                             {% else %}
                             <div class="pt-2 border-t border-slate-800/50">
@@ -322,8 +340,8 @@
                                     <span class="w-3.5 h-3.5 rounded-full bg-indigo-400/80 animate-pulse"></span>
                                 </div>
                                 <!-- Revealed password display -->
-                                <div id="password-visible" class="hidden text-3xl font-bold tracking-[0.4em] pl-[0.4em] py-1 text-white font-mono heading-font">
-                                    {{ reserva.senha_fechadura }}
+                                <div id="password-visible" class="hidden text-3xl font-bold tracking-[0.2em] pl-[0.2em] py-1 text-white font-mono heading-font">
+                                    {{ reserva.senha_fechadura }}#
                                 </div>
                                 <button onclick="togglePassword()" class="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent focus:outline-none cursor-pointer" aria-label="Revelar senha"></button>
                             </div>
@@ -342,7 +360,7 @@
 
                             <div class="mt-4 pt-3.5 border-t border-slate-800/60 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
                                 <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5"></i>
-                                <span>Para abrir a porta, digite o código acima no teclado da fechadura e finalize pressionando a tecla <b>#</b> ou conforme orientação da recepção.</span>
+                                <span>Para abrir a porta, digite o código acima no teclado da fechadura e finalize pressionando a tecla <b>#</b>.</span>
                             </div>
                         </div>
 
@@ -414,7 +432,7 @@
 
             <!-- Support & Contact Recepção -->
             <div class="pt-4">
-                <a href="https://wa.me/55{{ pousada.whatsapp_recepcao|cut:' '|cut:'-'|cut:'('|cut:')' }}" target="_blank" class="w-full flex items-center justify-center gap-2.5 px-5 py-4 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer">
+                <a href="https://wa.me/55{{ pousada.whatsapp_recepcao|cut:" "|cut:"-"|cut:" Tai"|cut:"(" |cut:")" }}?text=Olá!%20Sou%20o%20hóspede%20da%20reserva%20do%20quarto%20{{ reserva.quarto.nome_identificacao }}%20e%20preciso%20de%20ajuda." target="_blank" class="w-full flex items-center justify-center gap-2.5 px-5 py-4 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer">
                     <i data-lucide="message-square" class="w-4.5 h-4.5"></i>
                     <span>Precisa de ajuda? Falar com a Recepção</span>
                 </a>
@@ -442,7 +460,7 @@
         });
 
         let passwordVisible = false;
-        const passVal = "{{ reserva.senha_fechadura|default:'' }}";
+        const passVal = "{{ reserva.senha_fechadura|default:'' }}#";
 
         function togglePassword() {
             passwordVisible = !passwordVisible;

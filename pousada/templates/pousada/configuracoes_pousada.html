@@ -65,6 +65,14 @@
             <i data-lucide="clipboard-list" class="w-4.5 h-4.5"></i>
             Checklist de Limpeza
         </a>
+        <a href="/painel/pousada/config/?tab=fechaduras" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'fechaduras' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="lock" class="w-4.5 h-4.5"></i>
+            Fechaduras
+        </a>
+        <a href="/painel/pousada/config/?tab=mensagens" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'mensagens' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="message-square-text" class="w-4.5 h-4.5"></i>
+            Mensagens Automáticas
+        </a>
     </div>
 
     <!-- Tab Content -->
@@ -93,6 +101,30 @@
                             <i data-lucide="hotel" class="w-4.5 h-4.5"></i>
                         </div>
                         <input type="text" name="nome" id="nome" value="{{ pousada.nome }}" required
+                               class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="whatsapp_recepcao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">WhatsApp da Recepção</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="message-square" class="w-4.5 h-4.5"></i>
+                        </div>
+                        <input type="text" name="whatsapp_recepcao" id="whatsapp_recepcao" value="{{ pousada.whatsapp_recepcao|default:'' }}"
+                               placeholder="Ex: 5511999999999"
+                               class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="prefixo_pin_padrao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Prefixo Padrão da Senha (3 dígitos)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="key-round" class="w-4.5 h-4.5"></i>
+                        </div>
+                        <input type="text" name="prefixo_pin_padrao" id="prefixo_pin_padrao" value="{{ pousada.prefixo_pin_padrao }}" required
+                               maxlength="3" pattern="\d{3}" placeholder="Ex: 101"
                                class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
                     </div>
                 </div>
@@ -476,7 +508,7 @@
                                         <td class="px-4 py-3 text-slate-500">{{ q.categoria.capacidade }} hóspede(s)</td>
                                         <td class="px-4 py-3 font-bold text-slate-700">R$ {{ q.categoria.valor_diaria }}</td>
                                         <td class="px-4 py-3 text-right">
-                                            <form method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o quarto {{ q.nome_identificacao }}? Todas as reservas vinculadas perderão o vínculo.');" class="inline">
+                                            <form method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o quarto {{ q.nome_identificacao|escapejs }}? Todas as reservas vinculadas perderão o vínculo.');" class="inline">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="acao" value="excluir_quarto">
                                                 <input type="hidden" name="quarto_id" value="{{ q.id }}">
@@ -546,7 +578,7 @@
                             <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                                 Ativo
                             </span>
-                            <form method="POST" onsubmit="return confirm('Tem certeza que deseja desativar o método {{ metodo.nome }}?');" class="inline">
+                            <form method="POST" onsubmit="return confirm('Tem certeza que deseja desativar o método {{ metodo.nome|escapejs }}?');" class="inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="excluir_metodo_pagamento">
                                 <input type="hidden" name="metodo_id" value="{{ metodo.id }}">
@@ -855,7 +887,576 @@
                 </div>
             </div>
         </div>
+
+    {% elif tab == 'fechaduras' %}
+    <!-- ABA: FECHADURAS INTELIGENTES -->
+    <div class="space-y-6">
+
+        <!-- Header informativo -->
+        <div class="flex items-start gap-4 bg-gradient-to-r from-indigo-950 to-slate-900 border border-indigo-900/50 rounded-2xl p-5 shadow-sm">
+            <div class="w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                <i data-lucide="lock" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">Fechaduras Inteligentes (Tuya IoT)</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Vincule dispositivos IoT Tuya aos quartos. O Device ID é fornecido pelo app Tuya Smart ou Smart Life após parear o dispositivo.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Card Configuração de Prefixo -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="settings" class="w-4 h-4 text-indigo-500"></i>
+                        Prefixo da Senha (3 dígitos)
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Defina o prefixo padrão das senhas da sua pousada</p>
+                </div>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="config_geral">
+                    <input type="hidden" name="nome" value="{{ pousada.nome }}">
+                    <div>
+                        <label for="prefixo_pin_padrao_fechadura" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Prefixo Padrão</label>
+                        <input type="text" name="prefixo_pin_padrao" id="prefixo_pin_padrao_fechadura" value="{{ pousada.prefixo_pin_padrao }}" required
+                               maxlength="3" pattern="\d{3}" placeholder="Ex: 101"
+                               class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                    <button type="submit"
+                            class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Salvar Prefixo
+                    </button>
+                </form>
+            </div>
+
+            <!-- Formulário Cadastro -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-500"></i>
+                        Vincular Nova Fechadura
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Associe uma fechadura física a um quarto cadastrado</p>
+                </div>
+
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="nova_fechadura">
+
+                    <div>
+                        <label for="quarto_fechadura" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Quarto <span class="text-rose-500">*</span></label>
+                        <select name="quarto_id" id="quarto_fechadura" required
+                                class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="" disabled selected>Selecione o Quarto</option>
+                            {% for q in quartos %}
+                                <option value="{{ q.id }}">{{ q.nome_identificacao }} — {{ q.categoria.nome }}</option>
+                            {% empty %}
+                                <option disabled>Nenhum quarto cadastrado</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="nome_exibicao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome de Exibição <span class="text-rose-500">*</span></label>
+                        <input type="text" name="nome_exibicao" id="nome_exibicao" required
+                               placeholder="Ex: Fechadura Porta Principal"
+                               class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+
+                    <div>
+                        <label for="device_id" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Device ID (Tuya) <span class="text-rose-500">*</span></label>
+                        <input type="text" name="device_id" id="device_id" required
+                               placeholder="Ex: bfdf1234567890abcdef"
+                               class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all">
+                        <p class="text-[10px] text-slate-400 mt-1">Encontre em: App Tuya Smart → Dispositivo → ⋮ Editar → ID do Dispositivo.</p>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="link" class="w-4 h-4"></i>
+                        Vincular Fechadura
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tabela de Fechaduras -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 lg:col-span-2 space-y-4">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="list" class="w-4.5 h-4.5 text-slate-700"></i>
+                        Fechaduras Vinculadas
+                        <span class="ml-auto text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">{{ fechaduras|length }}</span>
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Dispositivos IoT ativos na sua pousada</p>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200/60 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="px-4 py-3">Quarto</th>
+                                <th class="px-4 py-3">Nome / Descrição</th>
+                                <th class="px-4 py-3">Device ID (Tuya)</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for f in fechaduras %}
+                            <tr class="hover:bg-white transition-colors">
+                                <td class="px-4 py-3">
+                                    <span class="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-xs whitespace-nowrap">
+                                        {{ f.quarto.nome_identificacao }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 font-semibold text-slate-700">{{ f.nome_exibicao }}</td>
+                                <td class="px-4 py-3">
+                                    <code class="text-[11px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded font-mono break-all">{{ f.device_id }}</code>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if f.is_online %}
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Online
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Offline
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <form method="POST"
+                                          onsubmit="return confirm('Remover a fechadura \'{{ f.nome_exibicao|escapejs }}\'? Reservas ativas perderão o acesso digital.');"
+                                          class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="acao" value="excluir_fechadura">
+                                        <input type="hidden" name="fechadura_id" value="{{ f.id }}">
+                                        <button type="submit"
+                                                class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer"
+                                                title="Remover Fechadura">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-4 py-10 text-center">
+                                    <div class="flex flex-col items-center gap-2 text-slate-400">
+                                        <i data-lucide="lock-open" class="w-8 h-8 text-slate-300"></i>
+                                        <p class="text-xs italic">Nenhuma fechadura cadastrada ainda.</p>
+                                        <p class="text-[10px] text-slate-300">Preencha o formulário ao lado para vincular seu primeiro dispositivo.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if fechaduras %}
+                <div class="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200/70 rounded-xl">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+                    <p class="text-[11px] text-amber-700 leading-normal">
+                        <strong>Atenção:</strong> Remover uma fechadura cancela a integração Tuya para novas reservas, mas não revoga senhas já programadas no dispositivo físico.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
     </div>
+
+    {% elif tab == 'mensagens' %}
+    <!-- 8. MENSAGENS AUTOMÁTICAS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Formulário de Criação -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5 h-fit">
+            <div>
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600"></i>
+                    Novo Template
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Crie um template de mensagem automática</p>
+            </div>
+
+            <form method="POST" class="space-y-4" id="form-novo-template">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="novo_template_mensagem">
+
+                <div>
+                    <label for="nome" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome do Template</label>
+                    <input type="text" name="nome" id="nome" required placeholder="Ex: Confirmação de Reserva"
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="canal" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Canal</label>
+                        <select name="canal" id="canal" required onchange="toggleAssuntoField(this.value, 'novo-assunto-container')"
+                                class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="email">E-mail</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="gatilho" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Gatilho</label>
+                        <select name="gatilho" id="gatilho" required onchange="toggleOffsetField(this.value, 'novo-offset-container')"
+                                class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="criacao_reserva">Criação da Reserva</option>
+                            <option value="confirmacao_reserva">Confirmação da Reserva</option>
+                            <option value="antes_checkin">Antes do Check-in</option>
+                            <option value="depois_checkout">Depois do Check-out</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="novo-offset-container" class="hidden">
+                    <label for="dias_offset" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Dias de Offset (Antecedência/Atraso)</label>
+                    <input type="number" name="dias_offset" id="dias_offset" min="0" value="0"
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    <p class="text-[10px] text-slate-400 mt-1">Ex: 2 para enviar 2 dias antes do check-in ou depois do check-out.</p>
+                </div>
+
+                <div id="novo-assunto-container">
+                    <label for="assunto" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Assunto (Apenas E-mail)</label>
+                    <input type="text" name="assunto" id="assunto" placeholder="Ex: Sua reserva na {{ pousada.nome }} foi confirmada!"
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div>
+                    <label for="corpo_mensagem" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Corpo da Mensagem</label>
+                    <textarea name="corpo_mensagem" id="corpo_mensagem" rows="6" required placeholder="Olá {% verbatim %}{{ nome_hospede }}{% endverbatim %}..."
+                              class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium font-mono text-xs"></textarea>
+                </div>
+
+                <!-- Variáveis Dinâmicas Legend -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-indigo-600"></i>
+                        Colinha de Variáveis Dinâmicas
+                    </div>
+                    <p class="text-[11px] text-indigo-800 leading-relaxed">
+                        Clique em uma tag para inseri-la no corpo do texto:
+                    </p>
+                    {% verbatim %}
+                    <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('corpo_mensagem', '{{ nome_hospede }}')">
+                            <span class="text-indigo-700 font-semibold">{{ nome_hospede }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('corpo_mensagem', '{{ data_checkin }}')">
+                            <span class="text-indigo-700 font-semibold">{{ data_checkin }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('corpo_mensagem', '{{ data_checkout }}')">
+                            <span class="text-indigo-700 font-semibold">{{ data_checkout }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('corpo_mensagem', '{{ link_portal }}')">
+                            <span class="text-indigo-700 font-semibold">{{ link_portal }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                    </div>
+                    {% endverbatim %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="ativo" id="ativo" checked
+                           class="w-4 h-4 text-indigo-650 border-slate-300 rounded focus:ring-indigo-500">
+                    <label for="ativo" class="text-xs font-semibold text-slate-700">Template ativo para disparos</label>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Template
+                </button>
+            </form>
+        </div>
+
+        <!-- Lista de Templates -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 lg:col-span-2 space-y-4">
+            <div>
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4.5 h-4.5 text-slate-700"></i>
+                    Templates Cadastrados
+                    <span class="ml-auto text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">{{ templates_mensagem|length }}</span>
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">Mensagens automáticas configuradas para sua pousada</p>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-slate-200/60 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-4 py-3">Nome</th>
+                            <th class="px-4 py-3">Canal</th>
+                            <th class="px-4 py-3">Gatilho</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for t in templates_mensagem %}
+                        <tr class="hover:bg-white transition-colors">
+                            <td class="px-4 py-3 font-semibold text-slate-800">{{ t.nome }}</td>
+                            <td class="px-4 py-3">
+                                {% if t.canal == 'email' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                        <i data-lucide="mail" class="w-3.5 h-3.5"></i> E-mail
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-605">
+                                <span class="font-medium">
+                                    {% if t.gatilho == 'criacao_reserva' %}
+                                        No momento da Reserva
+                                    {% elif t.gatilho == 'confirmacao_reserva' %}
+                                        Na Confirmação da Reserva
+                                    {% elif t.gatilho == 'antes_checkin' %}
+                                        {{ t.dias_offset }} dia(s) antes do Check-in
+                                    {% elif t.gatilho == 'depois_checkout' %}
+                                        {{ t.dias_offset }} dia(s) após o Check-out
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if t.ativo %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Ativo
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        Inativo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right flex items-center justify-end gap-2">
+                                <a href="?tab=mensagens&preview_id={{ t.id }}"
+                                   class="text-emerald-650 hover:text-emerald-850 transition-colors p-1.5 hover:bg-emerald-50 rounded-lg cursor-pointer"
+                                   title="Visualizar Mensagem">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                                <button type="button" 
+                                        onclick="abrirModalEdicao('{{ t.id }}', '{{ t.nome|escapejs }}', '{{ t.canal }}', '{{ t.gatilho }}', '{{ t.dias_offset }}', '{{ t.assunto|default_if_none:""|escapejs }}', '{{ t.corpo_mensagem|escapejs }}', {% if t.ativo %}true{% else %}false{% endif %})"
+                                        class="text-indigo-600 hover:text-indigo-800 transition-colors p-1.5 hover:bg-indigo-50 rounded-lg cursor-pointer"
+                                        title="Editar Template">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <form method="POST"
+                                      onsubmit="return confirm('Tem certeza que deseja excluir o template \'{{ t.nome|escapejs }}\'?');"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="excluir_template_mensagem">
+                                    <input type="hidden" name="template_id" value="{{ t.id }}">
+                                    <button type="submit"
+                                            class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer"
+                                            title="Excluir Template">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-10 text-center">
+                                <div class="flex flex-col items-center gap-2 text-slate-400">
+                                    <i data-lucide="message-square" class="w-8 h-8 text-slate-300"></i>
+                                    <p class="text-xs italic">Nenhum template cadastrado ainda.</p>
+                                    <p class="text-[10px] text-slate-300">Preencha o formulário ao lado para criar seu primeiro template.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div id="modal-editar-template" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="fecharModalEdicao()"></div>
+        <div class="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 z-10 m-4 animate-in fade-in zoom-in-95 duration-150">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-indigo-600"></i>
+                    Editar Template
+                </h3>
+                <button type="button" onclick="fecharModalEdicao()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form method="POST" class="space-y-4" id="form-editar-template">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="editar_template_mensagem">
+                <input type="hidden" name="template_id" id="edit-template-id">
+
+                <div>
+                    <label for="edit-nome" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome do Template</label>
+                    <input type="text" name="nome" id="edit-nome" required
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="edit-canal" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Canal</label>
+                        <select name="canal" id="edit-canal" required onchange="toggleAssuntoField(this.value, 'edit-assunto-container')"
+                                class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="email">E-mail</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="edit-gatilho" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Gatilho</label>
+                        <select name="gatilho" id="edit-gatilho" required onchange="toggleOffsetField(this.value, 'edit-offset-container')"
+                                class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="criacao_reserva">Criação da Reserva</option>
+                            <option value="confirmacao_reserva">Confirmação da Reserva</option>
+                            <option value="antes_checkin">Antes do Check-in</option>
+                            <option value="depois_checkout">Depois do Check-out</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="edit-offset-container" class="hidden">
+                    <label for="edit-dias-offset" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Dias de Offset (Antecedência/Atraso)</label>
+                    <input type="number" name="dias_offset" id="edit-dias-offset" min="0" value="0"
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div id="edit-assunto-container">
+                    <label for="edit-assunto" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Assunto (Apenas E-mail)</label>
+                    <input type="text" name="assunto" id="edit-assunto"
+                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div>
+                    <label for="edit-corpo-mensagem" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Corpo da Mensagem</label>
+                    <textarea name="corpo_mensagem" id="edit-corpo-mensagem" rows="5" required
+                              class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium font-mono text-xs"></textarea>
+                </div>
+
+                <!-- Variáveis Dinâmicas Legend (Edit Form) -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-indigo-600"></i>
+                        Colinha de Variáveis Dinâmicas
+                    </div>
+                    <p class="text-[11px] text-indigo-800 leading-relaxed">
+                        Clique em uma tag para inseri-la no corpo do texto:
+                    </p>
+                    {% verbatim %}
+                    <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('edit-corpo-mensagem', '{{ nome_hospede }}')">
+                            <span class="text-indigo-700 font-semibold">{{ nome_hospede }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('edit-corpo-mensagem', '{{ data_checkin }}')">
+                            <span class="text-indigo-700 font-semibold">{{ data_checkin }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('edit-corpo-mensagem', '{{ data_checkout }}')">
+                            <span class="text-indigo-700 font-semibold">{{ data_checkout }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                        <div class="bg-white px-2 py-1.5 border border-indigo-100 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition-colors" onclick="insertTagAtCursor('edit-corpo-mensagem', '{{ link_portal }}')">
+                            <span class="text-indigo-700 font-semibold">{{ link_portal }}</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-400"></i>
+                        </div>
+                    </div>
+                    {% endverbatim %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="ativo" id="edit-ativo"
+                           class="w-4 h-4 text-indigo-650 border-slate-300 rounded focus:ring-indigo-500">
+                    <label for="edit-ativo" class="text-xs font-semibold text-slate-700">Template ativo para disparos</label>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="fecharModalEdicao()"
+                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all border border-slate-200 cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all border border-indigo-700 cursor-pointer">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE PRÉ-VISUALIZAÇÃO (PREVIEW) -->
+    {% if preview_template %}
+    <div id="modal-preview-template" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="window.location.href='?tab=mensagens'"></div>
+        <div class="relative w-full max-w-xl bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 z-10 m-4 animate-in fade-in zoom-in-95 duration-150">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="eye" class="w-5 h-5 text-emerald-600"></i>
+                    Visualizar Mensagem
+                </h3>
+                <a href="?tab=mensagens" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </a>
+            </div>
+
+            <div class="space-y-3">
+                <div class="p-3.5 bg-slate-50 border border-slate-150 rounded-xl space-y-1">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Canal</span>
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold {% if preview_template.canal == 'email' %}text-blue-600{% else %}text-emerald-600{% endif %}">
+                        {% if preview_template.canal == 'email' %}
+                            <i data-lucide="mail" class="w-3.5 h-3.5"></i> E-mail
+                        {% else %}
+                            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if preview_template.canal == 'email' %}
+                <div class="p-3.5 bg-slate-50 border border-slate-150 rounded-xl space-y-1">
+                    <span class="block text-[10px] font-bold text-slate-450 uppercase tracking-wider">Assunto do E-mail</span>
+                    <span class="block text-sm font-semibold text-slate-800">{{ preview_assunto }}</span>
+                </div>
+                {% endif %}
+
+                <div class="p-4 bg-slate-50 border border-slate-150 rounded-xl space-y-2">
+                    <span class="block text-[10px] font-bold text-slate-450 uppercase tracking-wider">
+                        {% if preview_template.canal == 'email' %}Corpo do E-mail{% else %}Mensagem WhatsApp{% endif %}
+                    </span>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4 font-normal text-sm text-slate-700 whitespace-pre-wrap leading-relaxed shadow-sm">
+                        {{ preview_corpo|safe }}
+                    </div>
+                </div>
+                
+                <div class="text-[11px] text-slate-450 italic flex items-center gap-1">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+                    Os dados exibidos acima foram injetados simulando uma reserva real.
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <a href="?tab=mensagens"
+                   class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all border border-slate-200 cursor-pointer">
+                    Fechar
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% endif %}
 </div>
 
@@ -913,5 +1514,82 @@
             btn.classList.add('hover:scale-105');
         });
     }
+
+    // Message Engine Helpers
+    function toggleAssuntoField(canal, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const input = container.querySelector('input');
+        if (canal === 'email') {
+            container.classList.remove('hidden');
+            if (input) input.required = true;
+        } else {
+            container.classList.add('hidden');
+            if (input) {
+                input.required = false;
+                input.value = '';
+            }
+        }
+    }
+
+    function toggleOffsetField(gatilho, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const input = container.querySelector('input');
+        if (gatilho === 'criacao_reserva' || gatilho === 'confirmacao_reserva') {
+            container.classList.add('hidden');
+            if (input) input.value = '0';
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    function insertTagAtCursor(textareaId, tagText) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea) return;
+        
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        textarea.value = text.substring(0, startPos) + tagText + text.substring(endPos, text.length);
+        
+        // Move cursor to after the inserted tag
+        textarea.selectionStart = textarea.selectionEnd = startPos + tagText.length;
+        textarea.focus();
+    }
+
+    function abrirModalEdicao(id, nome, canal, gatilho, diasOffset, assunto, corpoMensagem, ativo) {
+        document.getElementById('edit-template-id').value = id;
+        document.getElementById('edit-nome').value = nome;
+        document.getElementById('edit-canal').value = canal;
+        document.getElementById('edit-gatilho').value = gatilho;
+        document.getElementById('edit-dias-offset').value = diasOffset;
+        document.getElementById('edit-assunto').value = assunto;
+        document.getElementById('edit-corpo-mensagem').value = corpoMensagem;
+        document.getElementById('edit-ativo').checked = ativo;
+
+        // Toggle containers based on values
+        toggleAssuntoField(canal, 'edit-assunto-container');
+        toggleOffsetField(gatilho, 'edit-offset-container');
+
+        document.getElementById('modal-editar-template').classList.remove('hidden');
+    }
+
+    function fecharModalEdicao() {
+        document.getElementById('modal-editar-template').classList.add('hidden');
+    }
+
+    // Initialize triggers on page load for create form
+    document.addEventListener('DOMContentLoaded', () => {
+        const canalSelect = document.getElementById('canal');
+        if (canalSelect) {
+            toggleAssuntoField(canalSelect.value, 'novo-assunto-container');
+        }
+        const gatilhoSelect = document.getElementById('gatilho');
+        if (gatilhoSelect) {
+            toggleOffsetField(gatilhoSelect.value, 'novo-offset-container');
+        }
+    });
 </script>
 {% endblock %}

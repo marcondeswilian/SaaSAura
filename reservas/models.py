@@ -152,4 +152,46 @@ class FichaFNRH(models.Model):
         return f"FNRH #{self.id} - Hóspede: {self.nome_completo}"
 
 
+class TemplateMensagem(models.Model):
+    CANAL_CHOICES = [
+        ('email', 'E-mail'),
+        ('whatsapp', 'WhatsApp'),
+    ]
+    GATILHO_CHOICES = [
+        ('criacao_reserva', 'Criação da Reserva'),
+        ('confirmacao_reserva', 'Confirmação da Reserva'),
+        ('antes_checkin', 'Antes do Check-in'),
+        ('depois_checkout', 'Depois do Check-out'),
+    ]
+
+    pousada = models.ForeignKey(Pousada, on_delete=models.CASCADE, related_name='templates_mensagem')
+    nome = models.CharField(max_length=100)
+    canal = models.CharField(max_length=20, choices=CANAL_CHOICES)
+    gatilho = models.CharField(max_length=55, choices=GATILHO_CHOICES)
+    dias_offset = models.IntegerField(default=0)
+    assunto = models.CharField(max_length=255, null=True, blank=True)
+    corpo_mensagem = models.TextField()
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.nome} ({self.get_canal_display()} - {self.get_gatilho_display()})"
+
+
+class LogDisparoMensagem(models.Model):
+    STATUS_CHOICES = [
+        ('sucesso', 'Sucesso'),
+        ('falha', 'Falha'),
+        ('pendente_whatsapp', 'Pendente WhatsApp'),
+    ]
+
+    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='logs_disparo')
+    template = models.ForeignKey(TemplateMensagem, on_delete=models.CASCADE, related_name='logs_disparo')
+    data_disparo = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES)
+
+    def __str__(self):
+        return f"Log {self.id}: Reserva {self.reserva_id} - Template {self.template_id} ({self.status})"
+
+
+
 

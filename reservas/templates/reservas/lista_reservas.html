@@ -79,7 +79,7 @@
                                 <!-- Hóspede -->
                                 <td class="px-6 py-4">
                                     <div>
-                                        <span class="font-semibold text-slate-900 block">{{ r.hospede.nome_completo }}</span>
+                                        <span class="font-semibold text-slate-900 block">{{ r.hospede.nome_completo|default:'Bloqueio' }}</span>
                                         <span class="text-xs text-slate-400 block">{{ r.hospede.telefone|default:"Sem telefone cadastrado" }}</span>
                                     </div>
                                 </td>
@@ -141,7 +141,7 @@
                                         </a>
                                         
                                         <!-- WhatsApp -->
-                                        {% if r.hospede.link_whatsapp %}
+                                        {% if r.hospede and r.hospede.link_whatsapp %}
                                         <a href="{{ r.hospede.link_whatsapp }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 hover:border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-700 transition-colors text-xs font-semibold" title="Abrir conversa no WhatsApp">
                                             <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
                                             <span>WhatsApp</span>
@@ -154,7 +154,9 @@
                                         {% endif %}
                                         
                                         <!-- Copiar Check-in -->
-                                        <button onclick="copiarLinkCheckin('{{ r.token_checkin }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 hover:border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 text-indigo-700 transition-colors text-xs font-semibold cursor-pointer" title="Copiar Link de Check-in Online">
+                                        {# NOTE: r.token_acesso is intentionally exposed here for the copy-link feature. #}
+                                        {# Each token is unique per reservation and grants limited guest-portal access only. #}
+                                        <button onclick="copiarLinkCheckin('{{ r.token_acesso }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 hover:border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 text-indigo-700 transition-colors text-xs font-semibold cursor-pointer" title="Copiar Link de Check-in Online">
                                             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                             <span>Copiar Link</span>
                                         </button>
@@ -593,7 +595,7 @@
 
         // Copy Link Action
         function copiarLinkCheckin(token) {
-            const checkinUrl = `${window.location.origin}/checkin/${token}/`;
+            const checkinUrl = `${window.location.origin}/hospede/meu-acesso/${token}/`;
             
             navigator.clipboard.writeText(checkinUrl)
                 .then(() => {
@@ -721,10 +723,15 @@
                                     const btn = document.createElement('button');
                                     btn.type = 'button';
                                     btn.className = 'w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm flex items-center justify-between border-b border-slate-100 last:border-0';
-                                    btn.innerHTML = `
-                                        <span class="font-medium text-slate-800">${item.nome_completo}</span>
-                                        <span class="text-xs text-slate-400">Selecionar</span>
-                                    `;
+                                    // XSS-safe: use textContent instead of innerHTML
+                                    const nameSpan = document.createElement('span');
+                                    nameSpan.className = 'font-medium text-slate-800';
+                                    nameSpan.textContent = item.nome_completo;
+                                    const actionSpan = document.createElement('span');
+                                    actionSpan.className = 'text-xs text-slate-400';
+                                    actionSpan.textContent = 'Selecionar';
+                                    btn.appendChild(nameSpan);
+                                    btn.appendChild(actionSpan);
                                     btn.addEventListener('click', () => {
                                         selectGuest(item.id, item.nome_completo);
                                     });
@@ -736,10 +743,19 @@
                             const registerBtn = document.createElement('button');
                             registerBtn.type = 'button';
                             registerBtn.className = 'w-full px-4 py-3 text-left hover:bg-emerald-50 bg-emerald-50/20 text-sm text-emerald-700 flex items-center gap-2 border-t border-slate-100';
-                            registerBtn.innerHTML = `
-                                <i data-lucide="user-plus" class="w-4 h-4 shrink-0"></i>
-                                <span>Cadastrar novo hóspede: <strong class="underline">"${query}"</strong></span>
-                            `;
+                            // XSS-safe: build DOM elements with textContent instead of innerHTML
+                            const icon = document.createElement('i');
+                            icon.setAttribute('data-lucide', 'user-plus');
+                            icon.className = 'w-4 h-4 shrink-0';
+                            const labelSpan = document.createElement('span');
+                            const labelText = document.createTextNode('Cadastrar novo hóspede: ');
+                            const queryStrong = document.createElement('strong');
+                            queryStrong.className = 'underline';
+                            queryStrong.textContent = `"${query}"`;
+                            labelSpan.appendChild(labelText);
+                            labelSpan.appendChild(queryStrong);
+                            registerBtn.appendChild(icon);
+                            registerBtn.appendChild(labelSpan);
                             registerBtn.addEventListener('click', () => {
                                 registerNewGuest(query);
                             });

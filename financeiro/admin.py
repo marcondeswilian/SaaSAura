@@ -9,7 +9,7 @@ class PagamentoAdmin(admin.ModelAdmin):
     search_fields = ('reserva__hospede__nome_completo', 'observacao')
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = super().get_queryset(request).select_related('reserva', 'reserva__hospede', 'pousada')
         try:
             return qs.filter(pousada=request.user.pousada)
         except (AttributeError, ObjectDoesNotExist):

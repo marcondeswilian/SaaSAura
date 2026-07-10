@@ -1,17 +1,20 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db.models import Case, When, Value, IntegerField
 from admin_saas.models import ClienteSaaS, NivelAcesso
-from .models import Pousada, MotivoBloqueio, CategoriaQuarto, Quarto, MetodoPagamentoConfig, LogAuditoria, ChecklistItem, RegistroLimpeza, ItemLimpezaConcluido, OrdemServico
+from .models import Pousada, MotivoBloqueio, CategoriaQuarto, Quarto, MetodoPagamentoConfig, LogAuditoria, ChecklistItem, RegistroLimpeza, ItemLimpezaConcluido, OrdemServico, Fechadura
 from hospedes.models import Tag
 from django.utils import timezone
+from reservas.models import TemplateMensagem
 
 @login_required
 def pousada_config_view(request):
     try:
         pousada = request.user.pousada
-    except Pousada.DoesNotExist:
+    except (AttributeError, Pousada.DoesNotExist):
         messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
         return redirect('reserva-lista')
 
@@ -23,11 +26,17 @@ def pousada_config_view(request):
         if acao == 'config_geral':
             nome = request.POST.get('nome')
             logo = request.FILES.get('logo')
+            whatsapp_recepcao = request.POST.get('whatsapp_recepcao')
+            prefixo_pin_padrao = request.POST.get('prefixo_pin_padrao')
 
             if nome:
                 pousada.nome = nome
             if logo:
                 pousada.logo = logo
+            if whatsapp_recepcao is not None:
+                pousada.whatsapp_recepcao = whatsapp_recepcao.strip()
+            if prefixo_pin_padrao:
+                pousada.prefixo_pin_padrao = prefixo_pin_padrao.strip()[:3]
 
             pousada.save()
             messages.success(request, "Configurações da pousada atualizadas com sucesso!")
@@ -100,7 +109,7 @@ def pousada_config_view(request):
             if nome and capacidade_str and valor_diaria_str:
                 try:
                     capacidade = int(capacidade_str)
-                    valor_diaria = float(valor_diaria_str)
+                    valor_diaria = Decimal(valor_diaria_str)
                     CategoriaQuarto.objects.create(
                         pousada=pousada,
                         nome=nome,
@@ -182,6 +191,105 @@ def pousada_config_view(request):
                 messages.error(request, "ID do método de pagamento não fornecido.")
             return redirect('/painel/pousada/config/?tab=pagamentos')
 
+        elif acao == 'nova_fechadura':
+            quarto_id = request.POST.get('quarto_id')
+            device_id = request.POST.get('device_id', '').strip()
+            nome_exibicao = request.POST.get('nome_exibicao', '').strip()
+
+            if not (quarto_id and device_id and nome_exibicao):
+                messages.error(request, 'Todos os campos da fechadura são obrigatórios.')
+            elif Fechadura.objects.filter(device_id=device_id).exists():
+                messages.error(request, f'Já existe uma fechadura cadastrada com o Device ID "{device_id}".')
+            else:
+                quarto = get_object_or_404(Quarto, id=quarto_id, pousada=pousada)
+                Fechadura.objects.create(
+                    quarto=quarto,
+                    device_id=device_id,
+                    nome_exibicao=nome_exibicao,
+                )
+                messages.success(request, f'Fechadura "{nome_exibicao}" vinculada ao quarto {quarto.nome_identificacao} com sucesso!')
+            return redirect('/painel/pousada/config/?tab=fechaduras')
+
+        elif acao == 'excluir_fechadura':
+            fechadura_id = request.POST.get('fechadura_id')
+            if fechadura_id:
+                fechadura = get_object_or_404(Fechadura, id=fechadura_id, quarto__pousada=pousada)
+                nome = fechadura.nome_exibicao
+                fechadura.delete()
+                messages.success(request, f'Fechadura "{nome}" removida com sucesso.')
+            else:
+                messages.error(request, 'ID da fechadura não fornecido.')
+            return redirect('/painel/pousada/config/?tab=fechaduras')
+
+        elif acao == 'novo_template_mensagem':
+            nome = request.POST.get('nome', '').strip()
+            canal = request.POST.get('canal', '').strip()
+            gatilho = request.POST.get('gatilho', '').strip()
+            dias_offset_str = request.POST.get('dias_offset', '0')
+            assunto = request.POST.get('assunto', '').strip() or None
+            corpo_mensagem = request.POST.get('corpo_mensagem', '').strip()
+            ativo = request.POST.get('ativo') == 'on'
+
+            try:
+                dias_offset = int(dias_offset_str)
+            except ValueError:
+                dias_offset = 0
+
+            if not nome or not canal or not gatilho or not corpo_mensagem:
+                messages.error(request, "Todos os campos obrigatórios devem ser preenchidos.")
+            else:
+                TemplateMensagem.objects.create(
+                    pousada=pousada,
+                    nome=nome,
+                    canal=canal,
+                    gatilho=gatilho,
+                    dias_offset=dias_offset,
+                    assunto=assunto if canal == 'email' else None,
+                    corpo_mensagem=corpo_mensagem,
+                    ativo=ativo
+                )
+                messages.success(request, f"Template '{nome}' criado com sucesso!")
+            return redirect('/painel/pousada/config/?tab=mensagens')
+
+        elif acao == 'editar_template_mensagem':
+            template_id = request.POST.get('template_id')
+            template = get_object_or_404(TemplateMensagem, id=template_id, pousada=pousada)
+            
+            nome = request.POST.get('nome', '').strip()
+            canal = request.POST.get('canal', '').strip()
+            gatilho = request.POST.get('gatilho', '').strip()
+            dias_offset_str = request.POST.get('dias_offset', '0')
+            assunto = request.POST.get('assunto', '').strip() or None
+            corpo_mensagem = request.POST.get('corpo_mensagem', '').strip()
+            ativo = request.POST.get('ativo') == 'on'
+
+            try:
+                dias_offset = int(dias_offset_str)
+            except ValueError:
+                dias_offset = 0
+
+            if not nome or not canal or not gatilho or not corpo_mensagem:
+                messages.error(request, "Todos os campos obrigatórios devem ser preenchidos.")
+            else:
+                template.nome = nome
+                template.canal = canal
+                template.gatilho = gatilho
+                template.dias_offset = dias_offset
+                template.assunto = assunto if canal == 'email' else None
+                template.corpo_mensagem = corpo_mensagem
+                template.ativo = ativo
+                template.save()
+                messages.success(request, f"Template '{nome}' atualizado com sucesso!")
+            return redirect('/painel/pousada/config/?tab=mensagens')
+
+        elif acao == 'excluir_template_mensagem':
+            template_id = request.POST.get('template_id')
+            template = get_object_or_404(TemplateMensagem, id=template_id, pousada=pousada)
+            nome = template.nome
+            template.delete()
+            messages.success(request, f"Template '{nome}' excluído com sucesso.")
+            return redirect('/painel/pousada/config/?tab=mensagens')
+
     # Read lists
     tags = Tag.objects.filter(pousada=pousada).order_by('nome')
     motivos_bloqueio = MotivoBloqueio.objects.filter(pousada=pousada).order_by('nome')
@@ -189,6 +297,37 @@ def pousada_config_view(request):
     quartos = Quarto.objects.filter(pousada=pousada).select_related('categoria').order_by('nome_identificacao')
     metodos_pagamento = MetodoPagamentoConfig.objects.filter(pousada=pousada, ativo=True).order_by('nome')
     checklist_itens = ChecklistItem.objects.filter(pousada=pousada, ativo=True).order_by('id')
+
+    fechaduras = Fechadura.objects.filter(quarto__pousada=pousada).select_related('quarto').order_by('quarto__nome_identificacao')
+    templates_mensagem = TemplateMensagem.objects.filter(pousada=pousada).order_by('nome')
+
+    # Lógica de Pré-visualização do Template
+    preview_template = None
+    preview_assunto = None
+    preview_corpo = None
+    preview_html = None
+    preview_id = request.GET.get('preview_id')
+    if preview_id and tab == 'mensagens':
+        try:
+            preview_template = TemplateMensagem.objects.get(id=preview_id, pousada=pousada)
+            from reservas.models import Reserva
+            reserva = Reserva.objects.filter(pousada=pousada).first()
+            if not reserva:
+                from hospedes.models import Hospede
+                mock_hospede = Hospede(nome_completo="José da Silva")
+                mock_quarto = Quarto(nome_identificacao="Suíte Luxo 102")
+                reserva = Reserva(
+                    pousada=pousada,
+                    hospede=mock_hospede,
+                    quarto=mock_quarto,
+                    data_checkin=timezone.localdate(),
+                    data_checkout=timezone.localdate() + timezone.timedelta(days=3),
+                    token_acesso="00000000-0000-0000-0000-000000000000"
+                )
+            from reservas.services.mensageria import renderizar_template_mensagem
+            preview_assunto, preview_corpo, preview_html = renderizar_template_mensagem(reserva, preview_template)
+        except TemplateMensagem.DoesNotExist:
+            pass
 
     return render(request, 'pousada/configuracoes_pousada.html', {
         'pousada': pousada,
@@ -199,6 +338,11 @@ def pousada_config_view(request):
         'quartos': quartos,
         'metodos_pagamento': metodos_pagamento,
         'checklist_itens': checklist_itens,
+        'fechaduras': fechaduras,
+        'templates_mensagem': templates_mensagem,
+        'preview_template': preview_template,
+        'preview_assunto': preview_assunto,
+        'preview_corpo': preview_html or preview_corpo,
     })
 
 
@@ -233,6 +377,7 @@ def gerenciar_equipe(request):
 
             try:
                 user = User.objects.create_user(username=username, email=email, password=password)
+                # NivelAcesso is a global model (no pousada FK) — shared across all pousadas
                 nivel = get_object_or_404(NivelAcesso, id=nivel_acesso_id)
                 ClienteSaaS.objects.create(
                     user=user,
@@ -273,6 +418,7 @@ def gerenciar_equipe(request):
 
     # GET request
     funcionarios = ClienteSaaS.objects.filter(pousada=pousada).select_related('user', 'nivel_acesso')
+    # NivelAcesso is a global model (no pousada FK) — shared across all pousadas
     niveis_acesso = NivelAcesso.objects.all()
 
     return render(request, 'pousada/configuracoes_pousada.html', {
@@ -396,10 +542,10 @@ def governanca_dashboard(request):
             concluidos_ids = [int(i_id) for i_id in concluidos_ids if i_id.isdigit()]
 
             # Atualizar os itens no banco
-            itens_concluidos = ItemLimpezaConcluido.objects.filter(registro_limpeza=registro)
+            itens_concluidos = list(ItemLimpezaConcluido.objects.filter(registro_limpeza=registro))
             for item in itens_concluidos:
                 item.concluido = item.id in concluidos_ids
-                item.save()
+            ItemLimpezaConcluido.objects.bulk_update(itens_concluidos, ['concluido'])
 
             messages.success(request, "Progresso do checklist salvo!")
             return redirect('governanca-dashboard')
@@ -509,7 +655,10 @@ def governanca_dashboard(request):
             quarto = get_object_or_404(Quarto, id=quarto_id, pousada=pousada)
             responsavel = None
             if responsavel_id:
-                responsavel = get_object_or_404(User, id=responsavel_id)
+                responsavel = User.objects.filter(id=responsavel_id, cliente_saas__pousada=pousada).first()
+                if not responsavel:
+                    messages.error(request, "Responsável não encontrado ou não pertence a esta pousada.")
+                    return redirect('governanca-dashboard')
 
             ordem = OrdemServico.objects.create(
                 quarto=quarto,
@@ -537,7 +686,11 @@ def governanca_dashboard(request):
 
             ordem = get_object_or_404(OrdemServico, id=ordem_id, pousada=pousada)
             if responsavel_id:
-                ordem.responsavel = get_object_or_404(User, id=responsavel_id)
+                responsavel = User.objects.filter(id=responsavel_id, cliente_saas__pousada=pousada).first()
+                if not responsavel:
+                    messages.error(request, "Responsável não encontrado ou não pertence a esta pousada.")
+                    return redirect('governanca-dashboard')
+                ordem.responsavel = responsavel
             
             if novo_status:
                 ordem.status = novo_status
@@ -679,9 +832,10 @@ def governanca_mobile_view(request):
             concluidos_ids = request.POST.getlist('itens_concluidos[]')
             concluidos_ids = [int(i_id) for i_id in concluidos_ids if i_id.isdigit()]
             
-            for item in registro.itens_concluidos.all():
+            itens_checklist = list(registro.itens_concluidos.all())
+            for item in itens_checklist:
                 item.concluido = item.id in concluidos_ids
-                item.save()
+            ItemLimpezaConcluido.objects.bulk_update(itens_checklist, ['concluido'])
                 
             messages.success(request, "Progresso do checklist salvo!")
             return redirect('governanca-mobile')
@@ -722,7 +876,16 @@ def governanca_mobile_view(request):
         responsavel=request.user,
         status__in=['pendente', 'em_andamento'],
         pousada=pousada
-    ).select_related('quarto', 'quarto__categoria').order_by('prioridade', 'data_criacao')
+    ).select_related('quarto', 'quarto__categoria').order_by(
+        Case(
+            When(prioridade='alta', then=Value(0)),
+            When(prioridade='media', then=Value(1)),
+            When(prioridade='baixa', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        ),
+        'data_criacao'
+    )
     
     # Adicionar checklist items
     for ordem in ordens:

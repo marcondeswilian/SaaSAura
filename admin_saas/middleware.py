@@ -15,7 +15,12 @@ class CheckAcessoSaaS:
             if not cliente or not cliente.ativo:
                 logout(request)
                 return redirect('/admin/login/')
-            
+
+            if not cliente.plano_ativo:
+                logout(request)
+                messages.error(request, 'Seu plano está inativo. Entre em contato com o suporte.')
+                return redirect('/login/')
+
             # Verificar expiração de data se houver
             if cliente.data_expiracao and cliente.data_expiracao < timezone.localdate():
                 logout(request)
@@ -56,7 +61,7 @@ class CheckAcessoSaaS:
 
                     if url_name in perm_map:
                         perm_field = perm_map[url_name]
-                        if not getattr(nivel, perm_field, True):
+                        if not getattr(nivel, perm_field, False):
                             # Se for API, retornar 403
                             if request.path_info.startswith('/api/') or request.headers.get('x-requested-with') == 'XMLHttpRequest':
                                 return JsonResponse({'error': 'Você não tem permissão para acessar este recurso.'}, status=403)

@@ -42,6 +42,5 @@ urlpatterns = [
     path('painel/governanca/', governanca_dashboard, name='governanca-dashboard'),
     path('painel/governanca/mobile/', governanca_mobile_view, name='governanca-mobile'),
     path('painel/dashboard/', dashboard_view, name='dashboard'),
-    path('hospede/meu-acesso/<uuid:token>/', portal_hospede, name='portal_hospede'),
     path('reserva/<int:pk>/fnrh/imprimir/', imprimir_fnrh_view, name='imprimir_fnrh'),
 ]
