@@ -19,8 +19,29 @@ class ReservaAdmin(admin.ModelAdmin):
             'hospede', 'quarto', 'quarto__categoria', 'pousada'
         )
 
-    # Bloqueia a edição se a reserva já estiver encerrada
     def has_change_permission(self, request, obj=None):
         if obj and obj.status in ('finalizada', 'cancelada'):
             return False
         return True
+
+from .models import Grupo, Acompanhante, FichaFNRH, TemplateMensagem, LogDisparoMensagem
+
+@admin.register(Grupo)
+class GrupoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'created_at')
+
+@admin.register(Acompanhante)
+class AcompanhanteAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'reserva', 'cpf')
+
+@admin.register(FichaFNRH)
+class FichaFNRHAdmin(admin.ModelAdmin):
+    list_display = ('nome_completo', 'reserva', 'cpf_passaporte', 'telefone', 'email')
+
+@admin.register(TemplateMensagem)
+class TemplateMensagemAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'canal', 'gatilho', 'ativo')
+
+@admin.register(LogDisparoMensagem)
+class LogDisparoMensagemAdmin(admin.ModelAdmin):
+    list_display = ('reserva', 'template', 'data_disparo', 'status')

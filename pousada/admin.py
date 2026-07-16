@@ -29,4 +29,26 @@ class ConfiguracaoTuyaAdmin(admin.ModelAdmin):
 @admin.register(Fechadura)
 class FechaduraAdmin(admin.ModelAdmin):
     list_display = ('nome_exibicao', 'quarto', 'device_id', 'is_online')
+
+from .models import MetodoPagamentoConfig, LogAuditoria, ChecklistItem, OrdemServico, RegistroLimpeza
+
+@admin.register(MetodoPagamentoConfig)
+class MetodoPagamentoConfigAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'pousada', 'ativo')
+
+@admin.register(LogAuditoria)
+class LogAuditoriaAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'acao', 'timestamp', 'pousada')
+
+@admin.register(ChecklistItem)
+class ChecklistItemAdmin(admin.ModelAdmin):
+    list_display = ('descricao', 'pousada', 'ativo')
+
+@admin.register(OrdemServico)
+class OrdemServicoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'quarto', 'tipo_servico', 'prioridade', 'status', 'responsavel')
+
+@admin.register(RegistroLimpeza)
+class RegistroLimpezaAdmin(admin.ModelAdmin):
+    list_display = ('quarto', 'funcionario', 'data', 'status')
 

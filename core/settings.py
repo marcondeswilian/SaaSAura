@@ -20,15 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # -----------------------------------------------------------------
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Gere uma nova chave com: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-kh*0020^(t^sex4fr=tz_l24^_51zgs_lxog8_l)jdlt@8mkon'  # Apenas para dev local!
-)
-
-# SECURITY WARNING: don't run with debug turned on in production!
-# Em produção, defina: DEBUG=False
+SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ValueError("A variável de ambiente SECRET_KEY precisa ser definida em produção!")
+    SECRET_KEY = 'django-insecure-kh*0020^(t^sex4fr=tz_l24^_51zgs_lxog8_l)jdlt@8mkon'
+
 
 # Em produção, defina: ALLOWED_HOSTS=seudominio.com,www.seudominio.com
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')

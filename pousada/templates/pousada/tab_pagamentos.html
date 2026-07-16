@@ -1,0 +1,65 @@
+<!-- 5. MÉTODOS DE PAGAMENTO -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Add Payment Method Form -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-500"></i> Novo Método
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Cadastre formas de pagamento aceitas na sua pousada</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="novo_metodo_pagamento">
+
+            <div>
+                <label for="nome_metodo" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome do Método</label>
+                <input type="text" name="nome_metodo" id="nome_metodo" required placeholder="Ex: Pix, Crédito Visa, Dinheiro"
+                       class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Método
+            </button>
+        </form>
+    </div>
+
+    <!-- Payment Methods List -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:col-span-2 space-y-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="list" class="w-4.5 h-4.5 text-slate-700"></i> Métodos Ativos
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Métodos de pagamento disponíveis para registrar lançamentos</p>
+        </div>
+
+        <div class="divide-y divide-slate-100 border border-slate-200/60 rounded-xl overflow-hidden bg-slate-50/50">
+            {% for metodo in metodos_pagamento %}
+                <div class="px-4 py-3.5 flex items-center justify-between text-sm hover:bg-white transition-colors">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="credit-card" class="w-4.5 h-4.5 text-slate-400"></i>
+                        <span class="font-semibold text-slate-700">{{ metodo.nome }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            Ativo
+                        </span>
+                        <form method="POST" onsubmit="return confirm('Tem certeza que deseja desativar o método {{ metodo.nome|escapejs }}?');" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="excluir_metodo_pagamento">
+                            <input type="hidden" name="metodo_id" value="{{ metodo.id }}">
+                            <button type="submit" class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer" title="Desativar Método">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="p-8 text-center text-slate-400 text-xs italic bg-white border border-slate-200/65 rounded-xl">
+                    Nenhum método de pagamento cadastrado.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

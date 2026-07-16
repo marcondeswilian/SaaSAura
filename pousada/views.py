@@ -9,37 +9,25 @@ from .models import Pousada, MotivoBloqueio, CategoriaQuarto, Quarto, MetodoPaga
 from hospedes.models import Tag
 from django.utils import timezone
 from reservas.models import TemplateMensagem
+from .decorators import pousada_required
 
 @login_required
+@pousada_required
 def pousada_config_view(request):
-    try:
-        pousada = request.user.pousada
-    except (AttributeError, Pousada.DoesNotExist):
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
-
+    pousada = request.pousada
     tab = request.GET.get('tab', 'geral')
+    from .forms import PousadaForm, ChecklistItemForm, QuartoForm
 
     if request.method == 'POST':
         acao = request.POST.get('acao', 'config_geral')
 
         if acao == 'config_geral':
-            nome = request.POST.get('nome')
-            logo = request.FILES.get('logo')
-            whatsapp_recepcao = request.POST.get('whatsapp_recepcao')
-            prefixo_pin_padrao = request.POST.get('prefixo_pin_padrao')
-
-            if nome:
-                pousada.nome = nome
-            if logo:
-                pousada.logo = logo
-            if whatsapp_recepcao is not None:
-                pousada.whatsapp_recepcao = whatsapp_recepcao.strip()
-            if prefixo_pin_padrao:
-                pousada.prefixo_pin_padrao = prefixo_pin_padrao.strip()[:3]
-
-            pousada.save()
-            messages.success(request, "Configurações da pousada atualizadas com sucesso!")
+            form = PousadaForm(request.POST, request.FILES, instance=pousada)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Configurações da pousada atualizadas com sucesso!")
+            else:
+                messages.error(request, "Erro ao salvar as configurações.")
             return redirect('/painel/pousada/config/?tab=geral')
 
         elif acao == 'config_governanca':
@@ -50,9 +38,11 @@ def pousada_config_view(request):
             return redirect('/painel/pousada/config/?tab=governanca_config')
 
         elif acao == 'novo_checklist_item':
-            descricao = request.POST.get('descricao', '').strip()
-            if descricao:
-                ChecklistItem.objects.create(pousada=pousada, descricao=descricao)
+            form = ChecklistItemForm(request.POST)
+            if form.is_valid():
+                item = form.save(commit=False)
+                item.pousada = pousada
+                item.save()
                 messages.success(request, "Item adicionado ao checklist com sucesso!")
             else:
                 messages.error(request, "A descrição do item é obrigatória.")
@@ -124,19 +114,15 @@ def pousada_config_view(request):
             return redirect('/painel/pousada/config/?tab=quartos')
 
         elif acao == 'novo_quarto':
-            nome_identificacao = request.POST.get('nome_identificacao')
-            categoria_id = request.POST.get('categoria_id')
-
-            if nome_identificacao and categoria_id:
-                categoria = get_object_or_404(CategoriaQuarto, id=categoria_id, pousada=pousada)
-                Quarto.objects.create(
-                    pousada=pousada,
-                    categoria=categoria,
-                    nome_identificacao=nome_identificacao
-                )
-                messages.success(request, f"Quarto '{nome_identificacao}' criado com sucesso!")
+            form = QuartoForm(request.POST)
+            if form.is_valid():
+                quarto = form.save(commit=False)
+                quarto.pousada = pousada
+                quarto.save()
+                messages.success(request, f"Quarto '{quarto.nome_identificacao}' criado com sucesso!")
             else:
-                messages.error(request, "Todos os campos do quarto são obrigatórios.")
+                errors_str = " | ".join([f"{f}: {e}" for f, e in form.errors.items()])
+                messages.error(request, f"Falha ao criar o quarto. Erros: {errors_str}")
             return redirect('/painel/pousada/config/?tab=quartos')
 
         elif acao == 'excluir_quarto':
@@ -151,6 +137,19 @@ def pousada_config_view(request):
                     messages.error(request, f"Não foi possível excluir o quarto '{nome_identificacao}': {str(e)}")
             else:
                 messages.error(request, "ID do quarto não fornecido.")
+            return redirect('/painel/pousada/config/?tab=quartos')
+
+        elif acao == 'editar_quarto':
+            quarto_id = request.POST.get('quarto_id')
+            if quarto_id:
+                quarto = get_object_or_404(Quarto, id=quarto_id, pousada=pousada)
+                form = QuartoForm(request.POST, instance=quarto)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, f"Quarto '{quarto.nome_identificacao}' atualizado com sucesso!")
+                else:
+                    errors_str = " | ".join([f"{f}: {e}" for f, e in form.errors.items()])
+                    messages.error(request, f"Falha ao atualizar o quarto. Erros: {errors_str}")
             return redirect('/painel/pousada/config/?tab=quartos')
 
         elif acao == 'excluir_categoria':
@@ -220,6 +219,13 @@ def pousada_config_view(request):
             else:
                 messages.error(request, 'ID da fechadura não fornecido.')
             return redirect('/painel/pousada/config/?tab=fechaduras')
+
+        elif acao == 'salvar_mensagem_pos_checkin':
+            pousada.mensagem_pos_checkin = request.POST.get('mensagem_pos_checkin', '').strip()
+            pousada.video_pos_checkin = request.POST.get('video_pos_checkin', '').strip()
+            pousada.save()
+            messages.success(request, 'Mensagem pós check-in online atualizada com sucesso.')
+            return redirect('/painel/pousada/config/?tab=mensagens')
 
         elif acao == 'novo_template_mensagem':
             nome = request.POST.get('nome', '').strip()
@@ -347,12 +353,9 @@ def pousada_config_view(request):
 
 
 @login_required
+@pousada_required
 def gerenciar_equipe(request):
-    try:
-        pousada = request.user.pousada
-    except AttributeError:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
+    pousada = request.pousada
 
     if request.method == 'POST':
         acao = request.POST.get('acao')
@@ -430,14 +433,17 @@ def gerenciar_equipe(request):
 
 
 @login_required
+@pousada_required
 def ver_logs(request):
-    try:
-        pousada = request.user.pousada
-    except AttributeError:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
+    from django.core.paginator import Paginator
+    pousada = request.pousada
 
-    logs = LogAuditoria.objects.filter(pousada=pousada).select_related('usuario').order_by('-timestamp')
+    logs_list = LogAuditoria.objects.filter(pousada=pousada).select_related('usuario').order_by('-timestamp')
+    
+    # Paginação (PERF-01) - 20 itens por página
+    paginator = Paginator(logs_list, 20)
+    page_number = request.GET.get('page')
+    logs = paginator.get_page(page_number)
 
     return render(request, 'pousada/configuracoes_pousada.html', {
         'pousada': pousada,
@@ -461,11 +467,7 @@ def governanca_dashboard(request):
         messages.error(request, "Você não possui permissão para acessar a área de Governança.")
         return redirect('reserva-lista')
 
-    try:
-        pousada = request.user.pousada
-    except AttributeError:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
+    pousada = request.pousada
 
     from reservas.models import Reserva
     from django.db.models import Q
@@ -746,11 +748,11 @@ def governanca_dashboard(request):
     # List all active quartos
     quartos = Quarto.objects.filter(pousada=pousada, ativo=True).select_related('categoria')
     
-    # Obter os registros de limpeza ativos (em_limpeza)
+    # Obter os registros de limpeza ativos (em_limpeza) com prefetch_related para evitar N+1 (PERF-03)
     registros_ativos = RegistroLimpeza.objects.filter(
         quarto__pousada=pousada, 
         status='em_limpeza'
-    ).select_related('quarto', 'funcionario', 'reserva_relacionada', 'reserva_relacionada__hospede')
+    ).select_related('quarto', 'funcionario', 'reserva_relacionada', 'reserva_relacionada__hospede').prefetch_related('itens_concluidos', 'itens_concluidos__checklist_item')
     
     # Criar mapeamento do registro para facilitar consulta no template
     mapa_registros = {reg.quarto.id: reg for reg in registros_ativos}
@@ -759,7 +761,7 @@ def governanca_dashboard(request):
     for q in quartos:
         q.active_registro = mapa_registros.get(q.id)
         if q.active_registro:
-            q.itens_checklist = q.active_registro.itens_concluidos.all().select_related('checklist_item')
+            q.itens_checklist = q.active_registro.itens_concluidos.all()
 
     # Separar os quartos por status para o painel principal
     quartos_sujos = [q for q in quartos if q.status_limpeza == 'sujo']
@@ -784,12 +786,9 @@ def governanca_dashboard(request):
 
 
 @login_required
+@pousada_required
 def governanca_mobile_view(request):
-    try:
-        pousada = request.user.pousada
-    except AttributeError:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
+    pousada = request.pousada
 
     if request.method == 'POST':
         acao = request.POST.get('acao')

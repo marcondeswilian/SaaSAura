@@ -7,12 +7,14 @@ from django.db import transaction
 from django.utils.text import slugify
 from pousada.models import Pousada
 from .models import ClienteSaaS, NivelAcesso
+from .security import superuser_required
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
+@superuser_required
 def admin_saas_dashboard(request):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
-
     # Garante que pelo menos um nível de acesso padrão exista
     default_nivel, created = NivelAcesso.objects.get_or_create(
         nome="Administrador Padrão",
@@ -33,10 +35,17 @@ def admin_saas_dashboard(request):
             for u in users_sem_cliente
         ], ignore_conflicts=True)
 
-    clientes = ClienteSaaS.objects.all().select_related('user', 'nivel_acesso', 'pousada', 'user__pousada_owner')
+    from django.core.paginator import Paginator
+    clientes_list = ClienteSaaS.objects.all().select_related('user', 'nivel_acesso', 'pousada', 'user__pousada_owner').order_by('id')
+    
+    # Paginação (PERF-01) - 20 clientes por página
+    paginator = Paginator(clientes_list, 20)
+    page_number = request.GET.get('page')
+    clientes = paginator.get_page(page_number)
+
     niveis = NivelAcesso.objects.all()
-    ativos_count = sum(1 for c in clientes if c.ativo)
-    inativos_count = sum(1 for c in clientes if not c.ativo)
+    ativos_count = ClienteSaaS.objects.filter(ativo=True).count()
+    inativos_count = ClienteSaaS.objects.filter(ativo=False).count()
 
     # Obter aba ativa para renderizar corretamente
     active_tab = request.GET.get('tab', 'clientes')
@@ -51,10 +60,9 @@ def admin_saas_dashboard(request):
     })
 
 @login_required
+@superuser_required
 @require_POST
 def toggle_cliente_ativo(request, pk):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
     cliente = get_object_or_404(ClienteSaaS, id=pk)
     cliente.ativo = not cliente.ativo
     cliente.save()
@@ -63,11 +71,9 @@ def toggle_cliente_ativo(request, pk):
     return redirect('/painel-saas/?tab=clientes')
 
 @login_required
+@superuser_required
 @require_POST
 def criar_cliente_saas(request):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
-        
     username = request.POST.get('username', '').strip()
     email = request.POST.get('email', '').strip()
     password = request.POST.get('password', '')
@@ -114,15 +120,15 @@ def criar_cliente_saas(request):
             
         messages.success(request, f"Cliente {username} e sua pousada '{pousada_nome}' foram criados com sucesso!")
     except Exception as e:
-        messages.error(request, f"Erro ao criar cliente: {str(e)}")
+        logger.exception("Erro ao criar cliente SaaS")
+        messages.error(request, "Erro interno ao criar cliente. Por favor, tente novamente.")
         
     return redirect('/painel-saas/?tab=clientes')
 
 @login_required
+@superuser_required
 @require_POST
 def atualizar_cliente_saas(request, pk):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
     cliente = get_object_or_404(ClienteSaaS, id=pk)
     data_exp = request.POST.get('data_expiracao') or None
     plano_ativo_val = request.POST.get('plano_ativo') == 'true'
@@ -138,16 +144,15 @@ def atualizar_cliente_saas(request, pk):
         cliente.save()
         messages.success(request, f"Configurações do cliente {cliente.user.username} atualizadas com sucesso!")
     except Exception as e:
-        messages.error(request, f"Erro ao atualizar configurações: {str(e)}")
+        logger.exception("Erro ao atualizar cliente SaaS")
+        messages.error(request, "Erro interno ao atualizar configurações do cliente.")
         
     return redirect('/painel-saas/?tab=clientes')
 
 @login_required
+@superuser_required
 @require_POST
 def criar_nivel_acesso(request):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
-    
     nome = request.POST.get('nome', '').strip()
     if not nome:
         messages.error(request, "O nome do nível de acesso é obrigatório.")
@@ -170,16 +175,15 @@ def criar_nivel_acesso(request):
         )
         messages.success(request, f"Nível de acesso '{nome}' criado com sucesso!")
     except Exception as e:
-        messages.error(request, f"Erro ao criar nível de acesso: {str(e)}")
+        logger.exception("Erro ao criar nivel de acesso")
+        messages.error(request, "Erro interno ao criar nível de acesso.")
 
     return redirect('/painel-saas/?tab=niveis')
 
 @login_required
+@superuser_required
 @require_POST
 def atualizar_nivel_acesso(request, pk):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
-    
     nivel = get_object_or_404(NivelAcesso, id=pk)
     nome = request.POST.get('nome', '').strip()
     if not nome:
@@ -202,16 +206,15 @@ def atualizar_nivel_acesso(request, pk):
         nivel.save()
         messages.success(request, f"Nível de acesso '{nome}' atualizado com sucesso!")
     except Exception as e:
-        messages.error(request, f"Erro ao atualizar nível de acesso: {str(e)}")
+        logger.exception("Erro ao atualizar nivel de acesso")
+        messages.error(request, "Erro interno ao atualizar nível de acesso.")
 
     return redirect('/painel-saas/?tab=niveis')
 
 @login_required
+@superuser_required
 @require_POST
 def excluir_nivel_acesso(request, pk):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
-    
     nivel = get_object_or_404(NivelAcesso, id=pk)
     
     # Impedir de excluir se houver clientes associados
@@ -223,14 +226,15 @@ def excluir_nivel_acesso(request, pk):
         nivel.delete()
         messages.success(request, f"Nível de acesso excluído com sucesso!")
     except Exception as e:
-        messages.error(request, f"Erro ao excluir nível de acesso: {str(e)}")
+        logger.exception("Erro ao excluir nivel de acesso")
+        messages.error(request, "Erro interno ao excluir nível de acesso.")
 
     return redirect('/painel-saas/?tab=niveis')
 
 @login_required
+@superuser_required
+@require_POST
 def testar_email(request):
-    if not request.user.is_superuser:
-        return redirect('reserva-lista')
     from django.core.mail import send_mail
     from django.http import HttpResponse
     try:
@@ -244,4 +248,6 @@ def testar_email(request):
         )
         return HttpResponse(f"E-mail de teste enviado com sucesso para {destinatario}! Verifique sua caixa de entrada (incluindo spam).")
     except Exception as e:
-        return HttpResponse(f"Erro ao enviar e-mail: {str(e)}", status=500)
+        logger.exception("Erro ao enviar email de teste")
+        return HttpResponse("Erro interno ao enviar e-mail de teste.", status=500)
+

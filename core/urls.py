@@ -27,6 +27,7 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/painel/dashboard/', permanent=True)),
     path('', include('reservas.urls')),
     path('', include('hospedes.urls')),
+    path('', include('pousada.urls')),
     path('painel-saas/', include('admin_saas.urls')),
     
     # Autenticação e Recuperação de Senha

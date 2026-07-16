@@ -22,15 +22,13 @@
         color: #1e293b !important;
     }
 
-    /* Trava a altura dos quadros internos para garantir alinhamento perfeito (esq/dir) ignorando bordas de tabela */
-    .fc-datagrid-cell-frame, .fc-timeline-lane-frame, .fc-datagrid-cell {
-        height: 56px !important;
-    }
+    /* Removemos as alturas fixas para permitir que o FullCalendar calcule e alinhe nativamente as linhas. */
+    
+    /* Removemos a altura forçada no .fc-datagrid-cell para não conflitar com a borda e o cálculo do próprio calendário */
 
     /* Anula o empilhamento do FullCalendar, travando todas as reservas na exata mesma linha */
     .fc-timeline-event-harness {
-        top: 10px !important;
-        bottom: auto !important;
+        /* Deixamos o FullCalendar calcular o posicionamento vertical nativamente, evitando que a reserva vaze para a linha de baixo */
     }
 
     /* Centraliza e estiliza as barras das reservas */
@@ -235,7 +233,7 @@
                 resourceAreaWidth: isMobile ? '35%' : '15%',
                 resourceAreaHeaderContent: 'Quartos',
                 nowIndicator: true,
-                snapDuration: '01:00:00',
+                /* snapDuration foi removido para herdar o padrão da coluna (24h/1 dia), evitando que o bloco possa ser solto no meio do dia */
                 eventDisplay: 'block',
                 eventOverlap: false,
                 displayEventTime: false,

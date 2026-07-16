@@ -33,7 +33,7 @@
                 <div class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
                     <div>
                         <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Valor Médio</span>
-                        <span class="text-3xl font-extrabold text-indigo-950">R$ 0,00</span>
+                        <span class="text-3xl font-extrabold text-indigo-950">R$ {{ valor_medio|floatformat:2 }}</span>
                     </div>
                     <div class="p-3 bg-slate-50 text-slate-600 rounded-lg">
                         <i data-lucide="trending-up" class="w-6 h-6"></i>

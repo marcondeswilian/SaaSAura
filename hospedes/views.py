@@ -2,34 +2,35 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.core.paginator import Paginator
 from .models import Hospede, Tag
-from datetime import datetime
+from .forms import HospedeForm
+from pousada.decorators import pousada_required
+from pousada.utils import get_pousada_for_user
 
 @login_required
+@pousada_required
 def hospede_lista_view(request):
-    try:
-        pousada = request.user.pousada
-    except Exception:
-        # Fallback if no pousada
-        return render(request, 'hospedes/lista_hospedes.html', {
-            'hospedes': [],
-            'query': ''
-        })
-
-    hospedes = Hospede.objects.filter(pousada=pousada).prefetch_related('tags').order_by('nome_completo')
+    pousada = request.pousada
+    hospedes_list = Hospede.objects.filter(pousada=pousada).prefetch_related('tags').order_by('nome_completo')
 
     query = request.GET.get('q', '').strip()
     if query:
-        hospedes = hospedes.filter(
+        hospedes_list = hospedes_list.filter(
             Q(nome_completo__icontains=query) |
             Q(cpf__icontains=query) |
             Q(email__icontains=query) |
             Q(telefone__icontains=query)
         )
 
-    total_hospedes = hospedes.count()
+    # Paginação (PERF-01) - 20 itens por página
+    paginator = Paginator(hospedes_list, 20)
+    page_number = request.GET.get('page')
+    hospedes = paginator.get_page(page_number)
+
+    total_hospedes = hospedes_list.count()
     tags_count = Tag.objects.filter(pousada=pousada).count()
-    contatos_count = hospedes.filter(
+    contatos_count = hospedes_list.filter(
         ~Q(email='') & ~Q(email__isnull=True) |
         ~Q(telefone='') & ~Q(telefone__isnull=True)
     ).count()
@@ -43,76 +44,39 @@ def hospede_lista_view(request):
     })
 
 @login_required
+@pousada_required
 def hospede_criar_view(request):
-    try:
-        pousada = request.user.pousada
-    except Exception:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
-
+    pousada = request.pousada
     tags_pousada = Tag.objects.filter(pousada=pousada).order_by('nome')
 
     if request.method == 'POST':
-        nome_completo = request.POST.get('nome_completo')
-        if not nome_completo or not nome_completo.strip():
-            messages.error(request, 'O campo Nome Completo é obrigatório.')
-            return render(request, 'hospedes/hospede_form.html', {
-                'tags_pousada': tags_pousada,
-                'action': 'Criar'
-            })
-        email = request.POST.get('email')
-        telefone = request.POST.get('telefone')
-        cpf = request.POST.get('cpf')
-        data_nascimento_str = request.POST.get('data_nascimento')
-        genero = request.POST.get('genero')
-        profissao = request.POST.get('profissao')
-        cep = request.POST.get('cep')
-        endereco = request.POST.get('endereco')
-        cidade = request.POST.get('cidade')
-        estado = request.POST.get('estado')
-        tag_ids = request.POST.getlist('tags')
-
-        data_nascimento = None
-        if data_nascimento_str:
-            try:
-                data_nascimento = datetime.strptime(data_nascimento_str, '%Y-%m-%d').date()
-            except ValueError:
-                messages.warning(request, 'Data de nascimento inválida, campo ignorado.')
-
-        hospede = Hospede.objects.create(
-            pousada=pousada,
-            nome_completo=nome_completo,
-            email=email,
-            telefone=telefone,
-            cpf=cpf,
-            data_nascimento=data_nascimento,
-            genero=genero,
-            profissao=profissao,
-            cep=cep,
-            endereco=endereco,
-            cidade=cidade,
-            estado=estado,
-        )
-
-        if tag_ids:
-            hospede.tags.set(Tag.objects.filter(pousada=pousada, id__in=tag_ids))
-
-        messages.success(request, f"Hóspede {hospede.nome_completo} criado com sucesso!")
-        return redirect('hospede-lista')
+        form = HospedeForm(request.POST)
+        if form.is_valid():
+            hospede = form.save(commit=False)
+            hospede.pousada = pousada
+            hospede.save()
+            
+            tag_ids = request.POST.getlist('tags')
+            if tag_ids:
+                hospede.tags.set(Tag.objects.filter(pousada=pousada, id__in=tag_ids))
+                
+            messages.success(request, f"Hóspede {hospede.nome_completo} criado com sucesso!")
+            return redirect('hospede-lista')
+        else:
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+    else:
+        form = HospedeForm()
 
     return render(request, 'hospedes/hospede_form.html', {
+        'form': form,
         'tags_pousada': tags_pousada,
         'action': 'Criar'
     })
 
 @login_required
+@pousada_required
 def hospede_editar_view(request, pk):
-    try:
-        pousada = request.user.pousada
-    except Exception:
-        messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
-        return redirect('reserva-lista')
-
+    pousada = request.pousada
     hospede = get_object_or_404(Hospede, pk=pk, pousada=pousada)
     tags_pousada = Tag.objects.filter(pousada=pousada).order_by('nome')
 
@@ -132,43 +96,25 @@ def hospede_editar_view(request, pk):
             messages.success(request, 'Hóspede excluído com sucesso.')
             return redirect('hospede-lista')
 
-        nome_completo = request.POST.get('nome_completo')
-        if not nome_completo or not nome_completo.strip():
-            messages.error(request, 'O campo Nome Completo é obrigatório.')
-            return redirect('hospede-editar', pk=pk)
-
-        hospede.nome_completo = nome_completo
-        hospede.email = request.POST.get('email')
-        hospede.telefone = request.POST.get('telefone')
-        hospede.cpf = request.POST.get('cpf')
-        data_nascimento_str = request.POST.get('data_nascimento')
-        hospede.genero = request.POST.get('genero')
-        hospede.profissao = request.POST.get('profissao')
-        hospede.cep = request.POST.get('cep')
-        hospede.endereco = request.POST.get('endereco')
-        hospede.cidade = request.POST.get('cidade')
-        hospede.estado = request.POST.get('estado')
-        tag_ids = request.POST.getlist('tags')
-
-        if data_nascimento_str:
-            try:
-                hospede.data_nascimento = datetime.strptime(data_nascimento_str, '%Y-%m-%d').date()
-            except ValueError:
-                messages.warning(request, 'Data de nascimento inválida, campo ignorado.')
+        form = HospedeForm(request.POST, instance=hospede)
+        if form.is_valid():
+            form.save()
+            tag_ids = request.POST.getlist('tags')
+            hospede.tags.set(Tag.objects.filter(pousada=pousada, id__in=tag_ids))
+            messages.success(request, f"Hóspede {hospede.nome_completo} atualizado com sucesso!")
+            return redirect('hospede-lista')
         else:
-            hospede.data_nascimento = None
-
-        hospede.save()
-        hospede.tags.set(Tag.objects.filter(pousada=pousada, id__in=tag_ids))
-
-        messages.success(request, f"Hóspede {hospede.nome_completo} atualizado com sucesso!")
-        return redirect('hospede-lista')
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+    else:
+        form = HospedeForm(instance=hospede)
 
     hospede_tags_ids = list(hospede.tags.values_list('id', flat=True))
 
     return render(request, 'hospedes/hospede_form.html', {
         'hospede': hospede,
+        'form': form,
         'tags_pousada': tags_pousada,
         'hospede_tags_ids': hospede_tags_ids,
         'action': 'Editar'
     })
+

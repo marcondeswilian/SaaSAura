@@ -1,0 +1,260 @@
+<!-- 4. QUARTOS E ESTRUTURA -->
+<div class="space-y-12">
+    <!-- 4.1 SEÇÃO DE CATEGORIAS -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-indigo-500"></i>
+                <span>Categorias de Quartos</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Defina os tipos de acomodações, capacidades de hóspedes e valores de diárias base.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Criar Categoria -->
+            <div class="space-y-4 lg:border-r lg:border-slate-100 lg:pr-8">
+                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Nova Categoria</span>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="nova_categoria">
+                    
+                    <div>
+                        <label for="nome_categoria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome da Categoria</label>
+                        <input type="text" name="nome_categoria" id="nome_categoria" required placeholder="Ex: Suíte Master, Quarto Standard"
+                               class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="capacidade_categoria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Capacidade</label>
+                            <input type="number" name="capacidade_categoria" id="capacidade_categoria" required min="1" placeholder="2"
+                                   class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                        </div>
+                        <div>
+                            <label for="valor_diaria_categoria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Valor Diária (R$)</label>
+                            <input type="number" step="0.01" name="valor_diaria_categoria" id="valor_diaria_categoria" required placeholder="0.00"
+                                   class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Categoria
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Lista de Categorias -->
+            <div class="lg:col-span-2 space-y-4">
+                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Categorias Cadastradas</span>
+                
+                <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200/60 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="px-4 py-3">Nome</th>
+                                <th class="px-4 py-3">Capacidade</th>
+                                <th class="px-4 py-3">Valor da Diária</th>
+                                <th class="px-4 py-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            {% for cat in categorias %}
+                                <tr class="hover:bg-white transition-colors">
+                                    <td class="px-4 py-3 font-semibold text-slate-700">{{ cat.nome }}</td>
+                                    <td class="px-4 py-3 text-slate-600">{{ cat.capacidade }} hóspede(s)</td>
+                                    <td class="px-4 py-3 font-bold text-slate-800">R$ {{ cat.valor_diaria }}</td>
+                                    <td class="px-4 py-3 text-right">
+                                        <form method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta categoria? Isso falhará se houver quartos ativos nela.');" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="acao" value="excluir_categoria">
+                                            <input type="hidden" name="categoria_id" value="{{ cat.id }}">
+                                            <button type="submit" class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer" title="Excluir Categoria">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-slate-400 text-xs italic">Nenhuma categoria cadastrada.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4.2 SEÇÃO DE QUARTOS -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div>
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="door-open" class="w-5 h-5 text-indigo-500"></i>
+                <span>Quartos e Unidades</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Cadastre os quartos físicos individuais vinculados às suas categorias estruturadas.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Criar Quarto -->
+            <div class="space-y-4 lg:border-r lg:border-slate-100 lg:pr-8">
+                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Novo Quarto</span>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="novo_quarto">
+                    
+                    <div>
+                        <label for="nome_identificacao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome / Número do Quarto</label>
+                        <input type="text" name="nome_identificacao" id="nome_identificacao" required placeholder="Ex: 101, Chapa 02, Suíte Lago"
+                               class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                    
+                    <div>
+                        <label for="categoria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Categoria Associada</label>
+                        <select name="categoria" id="categoria" required
+                                class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                            <option value="" disabled selected>Selecione a Categoria</option>
+                            {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.nome }} (Cap: {{ cat.capacidade }} - R$ {{ cat.valor_diaria }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="senha_acesso" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Senha de Acesso da Porta</label>
+                        <input type="text" name="senha_acesso" id="senha_acesso" placeholder="Ex: 1234, 45698"
+                               class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                    </div>
+                    
+                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Quarto
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Lista/Tabela de Quartos -->
+            <div class="lg:col-span-2 space-y-4">
+                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Quartos Cadastrados</span>
+                
+                <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200/60 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="px-4 py-3">Quarto / ID</th>
+                                <th class="px-4 py-3">Categoria</th>
+                                <th class="px-4 py-3">Capacidade</th>
+                                <th class="px-4 py-3">Valor Base</th>
+                                <th class="px-4 py-3 text-center">Senha</th>
+                                <th class="px-4 py-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            {% for q in quartos %}
+                                <tr class="hover:bg-white transition-colors">
+                                    <td class="px-4 py-3 font-semibold text-slate-800">
+                                        <span class="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-xs">{{ q.nome_identificacao }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-600">{{ q.categoria.nome }}</td>
+                                    <td class="px-4 py-3 text-slate-500">{{ q.categoria.capacidade }} hóspede(s)</td>
+                                    <td class="px-4 py-3 font-bold text-slate-700">R$ {{ q.categoria.valor_diaria }}</td>
+                                    <td class="px-4 py-3 text-center">
+                                        {% if q.senha_acesso %}
+                                            <span class="px-2 py-1 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono text-slate-700 font-bold tracking-widest">{{ q.senha_acesso }}</span>
+                                        {% else %}
+                                            <span class="text-[10px] text-slate-400 italic">Não conf.</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 text-right flex items-center justify-end gap-1">
+                                        <button type="button" 
+                                                onclick="abrirModalEdicaoQuarto('{{ q.id }}', '{{ q.nome_identificacao|escapejs }}', '{{ q.categoria.id }}', '{{ q.senha_acesso|default_if_none:""|escapejs }}')"
+                                                class="text-indigo-600 hover:text-indigo-800 transition-colors p-1.5 hover:bg-indigo-50 rounded-lg cursor-pointer" title="Editar Quarto">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </button>
+                                        <form method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o quarto {{ q.nome_identificacao|escapejs }}? Todas as reservas vinculadas perderão o vínculo.');" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="acao" value="excluir_quarto">
+                                            <input type="hidden" name="quarto_id" value="{{ q.id }}">
+                                            <button type="submit" class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer" title="Excluir Quarto">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs italic">Nenhum quarto cadastrado.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edição de Quarto -->
+<div id="modal-editar-quarto" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="fecharModalEdicaoQuarto()"></div>
+    <div class="relative w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 z-10 m-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-5 h-5 text-indigo-600"></i> Editar Quarto
+            </h3>
+            <button type="button" onclick="fecharModalEdicaoQuarto()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="editar_quarto">
+            <input type="hidden" name="quarto_id" id="edit-quarto-id">
+
+            <div>
+                <label for="edit_nome_identificacao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome / Número do Quarto</label>
+                <input type="text" name="nome_identificacao" id="edit_nome_identificacao" required
+                       class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium">
+            </div>
+
+            <div>
+                <label for="edit_categoria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Categoria Associada</label>
+                <select name="categoria" id="edit_categoria" required
+                        class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium">
+                    {% for cat in categorias %}
+                        <option value="{{ cat.id }}">{{ cat.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="edit_senha_acesso" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Senha de Acesso (Manual)</label>
+                <input type="text" name="senha_acesso" id="edit_senha_acesso" placeholder="Ex: 1234"
+                       class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="fecharModalEdicaoQuarto()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all cursor-pointer">
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalEdicaoQuarto(id, nome, categoria_id, senha) {
+    document.getElementById('edit-quarto-id').value = id;
+    document.getElementById('edit_nome_identificacao').value = nome;
+    document.getElementById('edit_categoria').value = categoria_id;
+    document.getElementById('edit_senha_acesso').value = senha;
+    document.getElementById('modal-editar-quarto').classList.remove('hidden');
+}
+
+function fecharModalEdicaoQuarto() {
+    document.getElementById('modal-editar-quarto').classList.add('hidden');
+}
+</script>

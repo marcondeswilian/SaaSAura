@@ -19,9 +19,12 @@ except ImportError:
 
 
 class TuyaLockService:
-    def __init__(self):
+    def __init__(self, pousada=None):
         from pousada.models import ConfiguracaoTuya
-        self.config = ConfiguracaoTuya.objects.first()
+        if pousada:
+            self.config = ConfiguracaoTuya.objects.filter(pousada=pousada).first()
+        else:
+            self.config = ConfiguracaoTuya.objects.first()
         
         self.region_urls = {
             'western_america': 'https://openapi.tuyaus.com',
