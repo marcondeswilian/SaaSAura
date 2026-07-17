@@ -89,17 +89,25 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Ex: DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', ''),
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=os.environ.get('DATABASE_SSL_REQUIRE', 'False') == 'True'
+        ssl_require=os.getenv('DATABASE_SSL_REQUIRE', 'False').lower() == 'true'
     )
 }
 
-if not DATABASES['default'].get('ENGINE'):
-    raise ValueError(
-        "A variável de ambiente DATABASE_URL não está definida. "
-        "Configure-a com a string de conexão do banco de dados."
-    )
+# Fallback explícito caso o dj-database-url falhe por conta de caracteres especiais na URL
+if not DATABASES['default'] or not DATABASES['default'].get('USER'):
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'aurasaas_prod'),
+        'USER': os.getenv('POSTGRES_USER', 'aura_user'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST', 'db'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
+    }
+    
+    if os.getenv('DATABASE_SSL_REQUIRE', 'False').lower() == 'true':
+        DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
