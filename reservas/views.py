@@ -601,7 +601,6 @@ def dashboard_view(request):
                 not na.pode_acessar_configuracoes
             )
             if is_operational:
-                from django.shortcuts import redirect
                 return redirect('governanca-mobile')
 
     from pousada.utils import get_pousada_for_user
@@ -622,7 +621,7 @@ def dashboard_view(request):
     ).select_related('quarto', 'hospede')
 
     ordens_ativas = OrdemServico.objects.filter(
-        pousada=pousada,
+        quarto__pousada=pousada,
         status__in=['pendente', 'em_andamento']
     ).select_related('quarto', 'responsavel')
 
