@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: aurasaas_db
+    restart: always
+    environment:
+      - POSTGRES_DB=aurasaas_prod
+      - POSTGRES_USER=aura_user
+      - POSTGRES_PASSWORD=Aura@3737#django
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: aurasaas_web
+    restart: always
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 core.wsgi:application"
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

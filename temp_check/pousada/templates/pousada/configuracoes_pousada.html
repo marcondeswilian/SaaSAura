@@ -1,0 +1,230 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Configurações da Pousada - AuraSaaS{% endblock %}
+
+{% block header_title %}Configurações da Pousada{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header Hero Card -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 shadow-xl mb-6 border border-slate-800">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row items-center md:justify-between gap-6">
+            <div>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight">Hub de Configurações</h2>
+                <p class="mt-2 text-slate-400 text-sm max-w-xl">
+                    Gerencie a identidade visual da sua pousada, configure tags e parametrize os motivos de bloqueios para manutenções de quartos.
+                </p>
+            </div>
+            
+            <div class="flex-shrink-0">
+                <div class="w-20 h-20 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center p-3 shadow-inner group transition-all duration-300 hover:scale-105">
+                    {% if pousada.logo %}
+                        <img src="{{ pousada.logo.url }}" alt="{{ pousada.nome }}" class="w-full h-full object-contain rounded-lg">
+                    {% else %}
+                        <i data-lucide="settings" class="w-8 h-8 text-slate-500"></i>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex flex-wrap gap-2.5 mb-6 text-sm font-semibold">
+        <a href="/painel/pousada/config/?tab=geral" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'geral' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="image" class="w-4.5 h-4.5"></i>
+            Identidade Visual
+        </a>
+        <a href="/painel/pousada/config/?tab=tags" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'tags' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="tag" class="w-4.5 h-4.5"></i>
+            Etiquetas e Tags
+        </a>
+        <a href="/painel/pousada/config/?tab=bloqueios" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'bloqueios' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="shield-alert" class="w-4.5 h-4.5"></i>
+            Motivos de Bloqueio
+        </a>
+        <a href="/painel/pousada/config/?tab=quartos" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'quartos' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="door-open" class="w-4.5 h-4.5"></i>
+            Quartos e Estrutura
+        </a>
+        <a href="/painel/pousada/config/?tab=pagamentos" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'pagamentos' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="credit-card" class="w-4.5 h-4.5"></i>
+            Métodos de Pagamento
+        </a>
+        <a href="{% url 'gerenciar-equipe' %}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'equipe' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="users" class="w-4.5 h-4.5"></i>
+            Equipe
+        </a>
+        <a href="{% url 'ver-logs' %}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'auditoria' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
+            Auditoria
+        </a>
+        <a href="/painel/pousada/config/?tab=governanca_config" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'governanca_config' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="clipboard-list" class="w-4.5 h-4.5"></i>
+            Checklist de Limpeza
+        </a>
+        <a href="/painel/pousada/config/?tab=fechaduras" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'fechaduras' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="lock" class="w-4.5 h-4.5"></i>
+            Fechaduras
+        </a>
+        <a href="/painel/pousada/config/?tab=mensagens" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'mensagens' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="message-square-text" class="w-4.5 h-4.5"></i>
+            Mensagens Automáticas
+        </a>
+    </div>
+
+    <!-- Tab Content -->
+    {% if tab == 'geral' %}
+        {% include 'pousada/tab_geral.html' %}
+    {% elif tab == 'tags' %}
+        {% include 'pousada/tab_tags.html' %}
+    {% elif tab == 'bloqueios' %}
+        {% include 'pousada/tab_bloqueios.html' %}
+    {% elif tab == 'quartos' %}
+        {% include 'pousada/tab_quartos.html' %}
+    {% elif tab == 'pagamentos' %}
+        {% include 'pousada/tab_pagamentos.html' %}
+    {% elif tab == 'equipe' %}
+        {% include 'pousada/tab_equipe.html' %}
+    {% elif tab == 'auditoria' %}
+        {% include 'pousada/tab_auditoria.html' %}
+    {% elif tab == 'governanca_config' %}
+        {% include 'pousada/tab_governanca_config.html' %}
+    {% elif tab == 'fechaduras' %}
+        {% include 'pousada/tab_fechaduras.html' %}
+    {% elif tab == 'mensagens' %}
+        {% include 'pousada/tab_mensagens.html' %}
+    {% endif %}
+</div>
+
+<!-- Scripts only for image upload preview and IoT/Forms features -->
+<script>
+    function previewImage(input) {
+        const file = input.files[0];
+        const fileNameSpan = document.getElementById('file-name');
+        
+        if (file) {
+            fileNameSpan.textContent = file.name;
+            fileNameSpan.classList.remove('hidden');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImg = document.getElementById('logo-preview');
+                const placeholder = document.getElementById('logo-preview-placeholder');
+                
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                
+                if (placeholder) {
+                    placeholder.classList.add('hidden');
+                }
+            }
+            reader.readAsDataURL(file);
+        } else {
+            fileNameSpan.classList.add('hidden');
+        }
+    }
+
+    // Color picker helpers
+    function selectColor(hex, button) {
+        document.getElementById('cor_tag').value = hex;
+        document.getElementById('cor_picker').value = hex;
+        
+        const colorButtons = button.parentElement.querySelectorAll('button');
+        colorButtons.forEach(btn => {
+            btn.classList.remove('scale-110', 'ring-2', 'ring-indigo-500');
+            btn.classList.add('hover:scale-105');
+        });
+        
+        button.classList.add('scale-110', 'ring-2', 'ring-indigo-500');
+        button.classList.remove('hover:scale-105');
+    }
+
+    function updateColorFromPicker(hex) {
+        document.getElementById('cor_tag').value = hex;
+        
+        const colorButtons = document.querySelectorAll('.grid button');
+        colorButtons.forEach(btn => {
+            btn.classList.remove('scale-110', 'ring-2', 'ring-indigo-500');
+            btn.classList.add('hover:scale-105');
+        });
+    }
+
+    // Message Engine Helpers
+    function toggleAssuntoField(canal, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const input = container.querySelector('input');
+        if (canal === 'email') {
+            container.classList.remove('hidden');
+            if (input) input.required = true;
+        } else {
+            container.classList.add('hidden');
+            if (input) {
+                input.required = false;
+                input.value = '';
+            }
+        }
+    }
+
+    // Toggle offset helper
+    function toggleOffsetField(gatilho, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const input = container.querySelector('input');
+        if (gatilho === 'criacao_reserva' || gatilho === 'confirmacao_reserva') {
+            container.classList.add('hidden');
+            if (input) input.value = '0';
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    function insertTagAtCursor(textareaId, tagText) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea) return;
+        
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        textarea.value = text.substring(0, startPos) + tagText + text.substring(endPos, text.length);
+        
+        textarea.selectionStart = textarea.selectionEnd = startPos + tagText.length;
+        textarea.focus();
+    }
+
+    function abrirModalEdicao(id, nome, canal, gatilho, diasOffset, assunto, corpoMensagem, ativo) {
+        document.getElementById('edit-template-id').value = id;
+        document.getElementById('edit-nome').value = nome;
+        document.getElementById('edit-canal').value = canal;
+        document.getElementById('edit-gatilho').value = gatilho;
+        document.getElementById('edit-dias-offset').value = diasOffset;
+        document.getElementById('edit-assunto').value = assunto;
+        document.getElementById('edit-corpo-mensagem').value = corpoMensagem;
+        document.getElementById('edit-ativo').checked = ativo;
+
+        toggleAssuntoField(canal, 'edit-assunto-container');
+        toggleOffsetField(gatilho, 'edit-offset-container');
+
+        document.getElementById('modal-editar-template').classList.remove('hidden');
+    }
+
+    function fecharModalEdicao() {
+        document.getElementById('modal-editar-template').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const canalSelect = document.getElementById('canal');
+        if (canalSelect) {
+            toggleAssuntoField(canalSelect.value, 'novo-assunto-container');
+        }
+        const gatilhoSelect = document.getElementById('gatilho');
+        if (gatilhoSelect) {
+            toggleOffsetField(gatilhoSelect.value, 'novo-offset-container');
+        }
+    });
+</script>
+{% endblock %}

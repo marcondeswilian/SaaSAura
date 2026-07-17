@@ -1,0 +1,542 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Editar Reserva #{{ reserva.id }} - AuraSaaS{% endblock %}
+{% block header_title %}Editar Reserva #{{ reserva.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mx-auto">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="edit" class="w-5 h-5 text-indigo-600"></i>
+            <span class="font-bold text-slate-900 text-sm">Modificar dados da reserva</span>
+        </div>
+        <a href="{% url 'imprimir_fnrh' reserva.id %}" target="_blank" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-750 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i> Imprimir FNRH
+        </a>
+    </div>
+
+    <!-- Form -->
+    <form action="{% url 'reserva-editar' reserva.id %}" method="POST" class="p-6 space-y-6">
+        {% csrf_token %}
+
+        <!-- Guest Selection -->
+        <div>
+            <label for="hospede-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Hóspede <span class="text-rose-500">*</span></label>
+            <select id="hospede-select" name="hospede" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                {% for h in hospedes %}
+                <option value="{{ h.id }}" {% if reserva.hospede and h.id == reserva.hospede.id %}selected{% endif %}>{{ h.nome_completo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Quarto & Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="quarto-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Quarto <span class="text-rose-500">*</span></label>
+                <select id="quarto-select" name="quarto" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                    {% for q in quartos %}
+                    <option value="{{ q.id }}" {% if q.id == reserva.quarto.id %}selected{% endif %}>{{ q.nome_identificacao }} ({{ q.categoria.nome }} - R$ {{ q.categoria.valor_diaria }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="status-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Status <span class="text-rose-500">*</span></label>
+                <select id="status-select" name="status" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                    <option value="pendente" {% if reserva.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="sinal" {% if reserva.status == 'sinal' %}selected{% endif %}>Sinal</option>
+                    <option value="confirmada" {% if reserva.status == 'confirmada' %}selected{% endif %}>Pago / Confirmado</option>
+                    <option value="finalizada" {% if reserva.status == 'finalizada' %}selected{% endif %}>Finalizada (Check-out)</option>
+                    <option value="cancelada" {% if reserva.status == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Dates (Check-in / Check-out) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="checkin-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Entrada (Check-in) <span class="text-rose-500">*</span></label>
+                <input type="date" id="checkin-date" name="data_checkin" value="{{ reserva.data_checkin|date:'Y-m-d' }}" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+            </div>
+            <div>
+                <label for="checkout-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Saída (Check-out) <span class="text-rose-500">*</span></label>
+                <input type="date" id="checkout-date" name="data_checkout" value="{{ reserva.data_checkout|date:'Y-m-d' }}" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+            </div>
+        </div>
+
+        <!-- Valor Total -->
+        <div>
+            <label for="total-value" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Valor Total (R$) <span class="text-rose-500">*</span></label>
+            <div class="relative">
+                <span class="absolute left-3.5 top-3.5 text-slate-400 text-xs font-semibold">R$</span>
+                <!-- We replace commas with dots for decimal parsing if needed, using string representation -->
+                <input type="number" step="0.01" id="total-value" name="valor_total" value="{{ reserva.valor_total|stringformat:'.2f' }}" placeholder="0.00" class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+            </div>
+        </div>
+
+        <!-- Link de Acesso do Hóspede -->
+        <div class="border-t border-slate-100 pt-4">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Link de Acesso do Hóspede (WhatsApp)</label>
+            <div class="flex gap-2">
+                <input type="text" id="link-portal-hospede" value="{{ url_acesso }}" readonly class="w-full px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 text-sm focus:outline-none">
+                <button type="button" onclick="copyGuestPortalLink()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <i data-lucide="copy" class="w-4 h-4"></i> Copiar Link
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Este link dá acesso direto e seguro para o hóspede visualizar a senha da fechadura e informações da estadia.</p>
+        </div>
+
+        <!-- FNRH Travel Fields (Collapsible/Advanced) -->
+        <div class="border-t border-slate-100 pt-4">
+            <button type="button" onclick="toggleAdvancedFNRH()" class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-wider focus:outline-none cursor-pointer">
+                <span id="fnrh-toggle-text">Dados da Viagem (FNRH)</span>
+                <i id="fnrh-toggle-icon" data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+            </button>
+            
+            <div id="fnrh-fields" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                <div>
+                    <label for="motivo-select" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Motivo da Viagem</label>
+                    <select id="motivo-select" name="motivo_viagem" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                        <option value="" {% if not reserva.motivo_viagem %}selected{% endif %}>Não Informado</option>
+                        <option value="lazer" {% if reserva.motivo_viagem == 'lazer' %}selected{% endif %}>Lazer</option>
+                        <option value="negocios" {% if reserva.motivo_viagem == 'negocios' %}selected{% endif %}>Negócios</option>
+                        <option value="congresso" {% if reserva.motivo_viagem == 'congresso' %}selected{% endif %}>Congresso / Convenção</option>
+                        <option value="parentes" {% if reserva.motivo_viagem == 'parentes' %}selected{% endif %}>Parentes / Amigos</option>
+                        <option value="estudos" {% if reserva.motivo_viagem == 'estudos' %}selected{% endif %}>Estudos</option>
+                        <option value="saude" {% if reserva.motivo_viagem == 'saude' %}selected{% endif %}>Saúde</option>
+                        <option value="compras" {% if reserva.motivo_viagem == 'compras' %}selected{% endif %}>Compras</option>
+                        <option value="outro" {% if reserva.motivo_viagem == 'outro' %}selected{% endif %}>Outro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="transporte-select" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Meio de Transporte</label>
+                    <select id="transporte-select" name="meio_transporte" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                        <option value="" {% if not reserva.meio_transporte %}selected{% endif %}>Não Informado</option>
+                        <option value="aviao" {% if reserva.meio_transporte == 'aviao' %}selected{% endif %}>Avião</option>
+                        <option value="automovel" {% if reserva.meio_transporte == 'automovel' %}selected{% endif %}>Automóvel</option>
+                        <option value="onibus" {% if reserva.meio_transporte == 'onibus' %}selected{% endif %}>Ônibus</option>
+                        <option value="trem" {% if reserva.meio_transporte == 'trem' %}selected{% endif %}>Trem</option>
+                        <option value="embarcacao" {% if reserva.meio_transporte == 'embarcacao' %}selected{% endif %}>Embarcação</option>
+                        <option value="outro" {% if reserva.meio_transporte == 'outro' %}selected{% endif %}>Outro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="placa-veiculo" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Placa do Veículo</label>
+                    <input type="text" id="placa-veiculo" name="placa_veiculo" value="{{ reserva.placa_veiculo|default:'' }}" placeholder="Ex: ABC-1234" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                </div>
+                <div>
+                    <label for="ultima-procedencia" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Última Procedência (Cidade/UF)</label>
+                    <input type="text" id="ultima-procedencia" name="ultima_procedencia" value="{{ reserva.ultima_procedencia|default:'' }}" placeholder="Cidade de onde veio" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="proximo-destino" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Próximo Destino (Cidade/UF)</label>
+                    <input type="text" id="proximo-destino" name="proximo_destino" value="{{ reserva.proximo_destino|default:'' }}" placeholder="Cidade para onde vai" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="border-t border-slate-100 pt-4 flex items-center justify-between">
+            <!-- Campo oculto para ação de exclusão (prevenção de Enter acidental) -->
+            <input type="hidden" name="acao" id="acao-reserva-field" value="">
+            <button type="button"
+                    onclick="if(confirm('Tem certeza que deseja cancelar/excluir este registro?')) { document.getElementById('acao-reserva-field').value='excluir'; this.closest('form').submit(); }"
+                    class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-sm font-semibold transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir / Cancelar
+            </button>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'reserva-lista' %}" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-slate-900/10 cursor-pointer">
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Card Financeiro -->
+{% if request.user.is_superuser or not request.user.cliente_saas or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_financeiro %}
+<div class="max-w-2xl bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mx-auto mt-6">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+        <i data-lucide="dollar-sign" class="w-5 h-5 text-indigo-600"></i>
+        <span class="font-bold text-slate-900 text-sm">Financeiro</span>
+    </div>
+    
+    <!-- Content -->
+    <div class="p-6 space-y-6">
+        <!-- Saldo Devedor and Status -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-150">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-0.5">Saldo Devedor</span>
+                <span class="text-2xl font-bold {% if reserva.saldo_devedor > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                    R$ {{ reserva.saldo_devedor }}
+                </span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-0.5">Status Financeiro</span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider
+                    {% if reserva.status_financeiro == 'quitado' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                    {% elif reserva.status_financeiro == 'parcial' %}bg-amber-50 text-amber-700 border border-amber-200
+                    {% else %}bg-rose-50 text-rose-700 border border-rose-200{% endif %}">
+                    {{ reserva.status_financeiro|upper }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Payments Table -->
+        <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Histórico de Pagamentos</label>
+            <div class="overflow-x-auto border border-slate-150 rounded-lg">
+                <table class="min-w-full divide-y divide-slate-100 text-sm">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Valor</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Método</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-2 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        {% for pagamento in reserva.pagamentos.all %}
+                        <tr>
+                            <td class="px-4 py-2.5 font-medium text-slate-900 capitalize">{{ pagamento.get_tipo_display }}</td>
+                            <td class="px-4 py-2.5 font-semibold text-slate-900">R$ {{ pagamento.valor }}</td>
+                            <td class="px-4 py-2.5 text-slate-600 capitalize">{{ pagamento.get_metodo_pagamento_display|default:"-" }}</td>
+                            <td class="px-4 py-2.5">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold capitalize
+                                    {% if pagamento.status == 'pago' %}bg-emerald-50 text-emerald-700
+                                    {% elif pagamento.status == 'pendente' %}bg-amber-50 text-amber-700
+                                    {% else %}bg-slate-50 text-slate-700{% endif %}">
+                                    {{ pagamento.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2.5 text-right">
+                                <button type="button" onclick="openEditPaymentModal('{{ pagamento.id|escapejs }}', '{{ pagamento.valor|escapejs }}', '{{ pagamento.tipo|escapejs }}', '{{ pagamento.metodo_pagamento|escapejs }}', '{{ pagamento.data_pagamento|date:'Y-m-d'|escapejs }}')" class="text-indigo-600 hover:text-indigo-900 transition-colors p-1.5 hover:bg-indigo-50 rounded-lg cursor-pointer" title="Editar Pagamento">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-4 text-center text-slate-400 text-sm">Nenhum pagamento registrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Payment Form -->
+        <div class="border-t border-slate-100 pt-6">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Registrar Novo Pagamento</h4>
+            <form action="{% url 'registrar-pagamento' %}" method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {% csrf_token %}
+                <input type="hidden" name="reserva_id" value="{{ reserva.id }}">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Valor (R$)</label>
+                    <input type="number" step="0.01" name="valor" placeholder="0.00" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tipo</label>
+                    <select name="tipo" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        <option value="sinal">Sinal</option>
+                        <option value="saldo_final" selected>Saldo Final</option>
+                        <option value="consumo">Consumo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Método de Pagamento</label>
+                    <select name="metodo_pagamento" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        {% for metodo in metodos_pagamento %}
+                            <option value="{{ metodo.nome|lower }}">{{ metodo.nome }}</option>
+                        {% empty %}
+                            <option value="pix">Pix (Padrão)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="sm:col-span-3 flex justify-end mt-2">
+                    <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer flex items-center justify-center gap-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Registrar Pagamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Card Ficha FNRH (Check-in Online) -->
+{% if reserva.checkin_online_realizado and reserva.ficha_fnrh %}
+<div class="max-w-2xl bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mx-auto mt-6">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i>
+            <span class="font-bold text-slate-900 text-sm">Ficha FNRH (Check-in Online)</span>
+        </div>
+        <a href="{% url 'imprimir_fnrh' reserva.id %}" target="_blank" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-600 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="printer" class="w-4 h-4"></i> Imprimir FNRH
+        </a>
+    </div>
+    
+    <!-- Content -->
+    <div class="p-6 space-y-6 text-sm">
+        <!-- Dados Pessoais -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="user" class="w-4 h-4 text-indigo-500"></i> Dados Pessoais
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Nome Completo:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.nome_completo }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">E-mail:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.email }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Telefone:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.telefone }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Data de Nascimento:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.data_nascimento|date:"d/m/Y" }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Nacionalidade:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.nacionalidade }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">CPF / Passaporte:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.cpf_passaporte }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Doc. Identidade:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.documento_identidade }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endereço -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="map-pin" class="w-4 h-4 text-indigo-500"></i> Endereço Residencial
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">CEP:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.cep }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Logradouro:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.logradouro }}, nº {{ reserva.ficha_fnrh.numero }}</span>
+                </div>
+                {% if reserva.ficha_fnrh.complemento %}
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Complemento:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.complemento }}</span>
+                </div>
+                {% endif %}
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Bairro:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.bairro }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Cidade/UF:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.cidade }} / {{ reserva.ficha_fnrh.estado }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">País:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.pais }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados Viagem -->
+        <div class="space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="plane" class="w-4 h-4 text-indigo-500"></i> Dados da Estadia
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Placa do Veículo:</span>
+                    <span class="font-semibold text-slate-800">{{ reserva.ficha_fnrh.placa_veiculo|default:"Não informado" }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200/30">
+                    <span class="text-slate-400">Motivo da Viagem:</span>
+                    <span class="font-semibold text-slate-800 capitalize">{{ reserva.ficha_fnrh.get_motivo_viagem_display }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Editar Pagamento -->
+<div id="edit-payment-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col overflow-hidden">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="edit" class="w-5 h-5 text-indigo-600"></i>
+                <span>Editar Pagamento</span>
+            </h3>
+            <button type="button" onclick="closeEditPaymentModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Form -->
+        <form id="edit-payment-form" method="POST" class="flex flex-col">
+            {% csrf_token %}
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Valor (R$)</label>
+                    <input type="number" step="0.01" id="edit-payment-valor" name="valor" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tipo</label>
+                    <select id="edit-payment-tipo" name="tipo" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        <option value="sinal">Sinal</option>
+                        <option value="saldo_final">Saldo Final</option>
+                        <option value="consumo">Consumo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Método de Pagamento</label>
+                    <select id="edit-payment-metodo" name="metodo_pagamento" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        {% for metodo in metodos_pagamento %}
+                            <option value="{{ metodo.nome|lower }}">{{ metodo.nome }}</option>
+                        {% empty %}
+                            <option value="pix">Pix (Padrão)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Pagamento</label>
+                    <input type="date" id="edit-payment-data" name="data_pagamento" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeEditPaymentModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-indigo-600/10 cursor-pointer">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        setupDateAutomation();
+    });
+
+    // Advanced FNRH Collapsible
+    function toggleAdvancedFNRH() {
+        const fields = document.getElementById('fnrh-fields');
+        const label = document.getElementById('fnrh-toggle-text');
+        const icon = document.getElementById('fnrh-toggle-icon');
+        
+        if (fields.classList.contains('hidden')) {
+            fields.classList.remove('hidden');
+            label.textContent = "Ocultar Dados da Viagem (FNRH)";
+            icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+            fields.classList.add('hidden');
+            label.textContent = "Mostrar Dados da Viagem (FNRH)";
+            icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        lucide.createIcons();
+    }
+
+    // Intelligent Date Picker Automation
+    function setupDateAutomation() {
+        const checkinInput = document.getElementById('checkin-date');
+        const checkoutInput = document.getElementById('checkout-date');
+        
+        checkinInput.addEventListener('change', () => {
+            const checkinVal = checkinInput.value;
+            if (!checkinVal) return;
+            
+            const checkinDate = new Date(checkinVal + 'T00:00:00');
+            // Add 1 day
+            checkinDate.setDate(checkinDate.getDate() + 1);
+            
+            // Format Date back to YYYY-MM-DD
+            const yyyy = checkinDate.getFullYear();
+            const mm = String(checkinDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(checkinDate.getDate()).padStart(2, '0');
+            
+            checkoutInput.value = `${yyyy}-${mm}-${dd}`;
+        });
+    }
+
+    // Modal Editar Pagamento JS
+    function openEditPaymentModal(id, valor, tipo, metodo, data) {
+        const modal = document.getElementById('edit-payment-modal');
+        const form = document.getElementById('edit-payment-form');
+        
+        // Formata o valor substituindo vírgula por ponto para o input number funcionar
+        const formattedValor = parseFloat(valor.replace(',', '.')).toFixed(2);
+        
+        document.getElementById('edit-payment-valor').value = formattedValor;
+        document.getElementById('edit-payment-tipo').value = tipo;
+        document.getElementById('edit-payment-metodo').value = metodo;
+        document.getElementById('edit-payment-data').value = data;
+        
+        form.action = `/painel/reservas/pagamentos/${id}/editar/`;
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+        }, 10);
+    }
+    
+    function closeEditPaymentModal() {
+        const modal = document.getElementById('edit-payment-modal');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function copyGuestPortalLink() {
+        const linkInput = document.getElementById('link-portal-hospede');
+        if (!linkInput) return;
+        
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            const copyBtn = document.querySelector('button[onclick="copyGuestPortalLink()"]');
+            if (copyBtn) {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Copiado!';
+                copyBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                copyBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                lucide.createIcons();
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                    copyBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                    lucide.createIcons();
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error("Falha ao copiar link: ", err);
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNRH - Reserva #{{ reserva.id }} - {{ pousada.nome }}</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body {
+                background-color: #ffffff;
+                color: #000000;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-border {
+                border-color: #000000 !important;
+            }
+            @page {
+                size: A4;
+                margin: 1.5cm;
+            }
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen p-0 sm:p-6 flex justify-center items-start">
+
+    <!-- Print Control Bar (Omitted on physical print) -->
+    <div class="no-print fixed top-4 right-4 bg-white border border-slate-200 rounded-xl shadow-lg p-3 flex gap-2 z-50">
+        <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-md shadow-indigo-600/10">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Imprimir Ficha
+        </button>
+        <button onclick="window.close()" class="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer">
+            Fechar Guia
+        </button>
+    </div>
+
+    <!-- Printable FNRH container -->
+    <div class="w-full max-w-[21cm] bg-white text-black p-8 sm:p-12 sm:shadow-md border border-slate-200 print-border flex flex-col justify-between">
+        
+        <!-- Header -->
+        <div class="border-b-2 border-black pb-4 text-center">
+            <h1 class="text-lg font-bold uppercase tracking-wider">Ficha Nacional de Registro de Hóspedes (FNRH)</h1>
+            <p class="text-xs font-semibold uppercase mt-1">Ministério do Turismo - Embratur</p>
+            <div class="mt-4 grid grid-cols-2 gap-4 text-left text-xs font-semibold">
+                <div>
+                    Estabelecimento: <span class="font-normal">{{ pousada.nome }}</span>
+                </div>
+                <div class="text-right">
+                    Quarto: <span class="font-normal">{{ reserva.quarto.nome_identificacao }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Personal Info -->
+        <div class="mt-6">
+            <h2 class="text-xs font-bold uppercase bg-slate-100 print:bg-slate-250 p-1.5 border border-black mb-4">1. Identificação do Hóspede</h2>
+            
+            <div class="space-y-4 text-xs">
+                <!-- Nome -->
+                <div class="flex items-end gap-2">
+                    <span class="font-bold shrink-0">Nome Completo:</span>
+                    <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                        {{ ficha.nome_completo|default:'' }}
+                    </div>
+                </div>
+
+                <!-- Email & Tel -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">E-mail:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.email|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Telefone:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.telefone|default:'' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Nasc & Nacionalidade -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Nascimento:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {% if ficha.data_nascimento %}{{ ficha.data_nascimento|date:"d/m/Y" }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Nacionalidade:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.nacionalidade|default:'' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CPF / Passaporte & Identidade -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">CPF / Passaporte:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.cpf_passaporte|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Identidade (RG):</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.documento_identidade|default:'' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Address Info -->
+        <div class="mt-8">
+            <h2 class="text-xs font-bold uppercase bg-slate-100 print:bg-slate-250 p-1.5 border border-black mb-4">2. Endereço Residencial</h2>
+            
+            <div class="space-y-4 text-xs">
+                <!-- CEP & Logradouro -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="flex items-end gap-2 col-span-1">
+                        <span class="font-bold shrink-0">CEP:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.cep|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2 col-span-2">
+                        <span class="font-bold shrink-0">Logradouro:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.logradouro|default:'' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Numero & Complemento -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="flex items-end gap-2 col-span-1">
+                        <span class="font-bold shrink-0">Número:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.numero|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2 col-span-2">
+                        <span class="font-bold shrink-0">Complemento:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.complemento|default:'' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bairro & Cidade/Estado/Pais -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Bairro:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.bairro|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Cidade/UF/País:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {% if ficha %}{{ ficha.cidade }} / {{ ficha.estado }} / {{ ficha.pais }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Stay and Trip details -->
+        <div class="mt-8">
+            <h2 class="text-xs font-bold uppercase bg-slate-100 print:bg-slate-250 p-1.5 border border-black mb-4">3. Dados da Estadia & Viagem</h2>
+            
+            <div class="space-y-4 text-xs">
+                <!-- Data Check-in & Check-out -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Data de Entrada:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ reserva.data_checkin|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Data de Saída:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ reserva.data_checkout|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placa & Motivo Viagem -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Placa do Veículo:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px]">
+                            {{ ficha.placa_veiculo|default:reserva.placa_veiculo|default:'' }}
+                        </div>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <span class="font-bold shrink-0">Motivo da Viagem:</span>
+                        <div class="flex-1 border-b border-black pb-0.5 min-h-[18px] capitalize">
+                            {% if ficha %}{{ ficha.get_motivo_viagem_display }}{% elif reserva.motivo_viagem %}{{ reserva.get_motivo_viagem_display }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="mt-16 pt-8 border-t border-black grid grid-cols-2 gap-8 text-center text-xs">
+            <div class="flex flex-col justify-end">
+                <p>Data: _____/_____/__________</p>
+            </div>
+            <div>
+                <div class="border-b border-black w-full h-8"></div>
+                <p class="mt-2 font-bold uppercase">Assinatura do Hóspede</p>
+            </div>
+        </div>
+
+        <!-- Legal Notice -->
+        <div class="mt-12 text-[8px] text-slate-500 text-justify leading-normal">
+            Declaro serem verdadeiras as informações acima prestadas, sob pena de responder civil e criminalmente por declarações falsas. Autorizo o estabelecimento a tratar os dados pessoais fornecidos nesta ficha em conformidade com as diretrizes da Lei Geral de Proteção de Dados (LGPD) para fins de registro oficial de hospedagem e envio ao Ministério do Turismo.
+        </div>
+
+    </div>
+
+    <!-- Auto-print script -->
+    <script>
+        window.onload = function() {
+            // Wait slightly for browser/styles to load, then trigger print
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!-- 7. LOGS DE AUDITORIA -->
+<div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+    <div>
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-4.5 h-4.5 text-slate-700"></i> Histórico de Auditoria
+        </h3>
+        <p class="text-xs text-slate-500 mt-0.5">Logs automáticos de criação, edição e exclusão de reservas, pagamentos e clientes</p>
+    </div>
+
+    <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    <th class="px-4 py-3">Data/Hora</th>
+                    <th class="px-4 py-3">Usuário</th>
+                    <th class="px-4 py-3">Ação</th>
+                    <th class="px-4 py-3 text-center">ID do Alvo</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+                {% for log in logs %}
+                <tr class="hover:bg-slate-50/40 transition-colors">
+                    <td class="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">
+                        {{ log.timestamp|date:"d/m/Y H:i:s" }}
+                    </td>
+                    <td class="px-4 py-3 font-semibold text-slate-800">
+                        {{ log.usuario.username|default:"Sistema / Superuser" }}
+                    </td>
+                    <td class="px-4 py-3 text-slate-700 font-medium">
+                        {{ log.acao }}
+                    </td>
+                    <td class="px-4 py-3 text-center text-slate-500 font-mono">
+                        {{ log.alvo_id|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="p-8 text-center text-slate-400 text-xs italic">
+                        Nenhum log de auditoria registrado para esta pousada.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    {% if logs.has_other_pages %}
+    <div class="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6 mt-4">
+        <div class="flex flex-1 justify-between sm:hidden">
+            {% if logs.has_previous %}
+                <a href="?tab=auditoria&page={{ logs.previous_page_number }}" class="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Anterior</a>
+            {% endif %}
+            {% if logs.has_next %}
+                <a href="?tab=auditoria&page={{ logs.next_page_number }}" class="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Próximo</a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-700">
+                    Mostrando página <span class="font-medium">{{ logs.number }}</span> de <span class="font-medium">{{ logs.paginator.num_pages }}</span>
+                </p>
+            </div>
+            <div>
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    {% if logs.has_previous %}
+                        <a href="?tab=auditoria&page={{ logs.previous_page_number }}" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0">
+                            <span class="sr-only">Anterior</span>
+                            <i data-lucide="chevron-left" class="h-5 h-5"></i>
+                        </a>
+                    {% endif %}
+                    
+                    {% for i in logs.paginator.page_range %}
+                        {% if logs.number == i %}
+                            <span aria-current="page" class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ i }}</span>
+                        {% else %}
+                            <a href="?tab=auditoria&page={{ i }}" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if logs.has_next %}
+                        <a href="?tab=auditoria&page={{ logs.next_page_number }}" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0">
+                            <span class="sr-only">Próximo</span>
+                            <i data-lucide="chevron-right" class="h-5 h-5"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,180 @@
+<!-- ABA: FECHADURAS INTELIGENTES -->
+<div class="space-y-6">
+
+    <!-- Header informativo -->
+    <div class="flex items-start gap-4 bg-gradient-to-r from-indigo-950 to-slate-900 border border-indigo-900/50 rounded-2xl p-5 shadow-sm">
+        <div class="w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <h3 class="text-base font-bold text-white">Fechaduras Inteligentes (Tuya IoT)</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Vincule dispositivos IoT Tuya aos quartos. O Device ID é fornecido pelo app Tuya Smart ou Smart Life após parear o dispositivo.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Card Configuração de Prefixo -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+            <div>
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4 text-indigo-500"></i>
+                    Prefixo da Senha (3 dígitos)
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">Defina o prefixo padrão das senhas da sua pousada</p>
+            </div>
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="config_geral">
+                <input type="hidden" name="nome" value="{{ pousada.nome }}">
+                <div>
+                    <label for="prefixo_pin_padrao_fechadura" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Prefixo Padrão</label>
+                    <input type="text" name="prefixo_pin_padrao" id="prefixo_pin_padrao_fechadura" value="{{ pousada.prefixo_pin_padrao }}" required
+                           maxlength="3" pattern="\d{3}" placeholder="Ex: 101"
+                           class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+                <button type="submit"
+                        class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Salvar Prefixo
+                </button>
+            </form>
+        </div>
+
+        <!-- Formulário Cadastro -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+            <div>
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-500"></i>
+                    Vincular Nova Fechadura
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">Associe uma fechadura física a um quarto cadastrado</p>
+            </div>
+
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="nova_fechadura">
+
+                <div>
+                    <label for="quarto_fechadura" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Quarto <span class="text-rose-500">*</span></label>
+                    <select name="quarto_id" id="quarto_fechadura" required
+                            class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                        <option value="" disabled selected>Selecione o Quarto</option>
+                        {% for q in quartos %}
+                            <option value="{{ q.id }}">{{ q.nome_identificacao }} — {{ q.categoria.nome }}</option>
+                        {% empty %}
+                            <option disabled>Nenhum quarto cadastrado</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="nome_exibicao" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Nome de Exibição <span class="text-rose-500">*</span></label>
+                    <input type="text" name="nome_exibicao" id="nome_exibicao" required
+                           placeholder="Ex: Fechadura Porta Principal"
+                           class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+                </div>
+
+                <div>
+                    <label for="device_id" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Device ID (Tuya) *</label>
+                    <input type="text" name="device_id" id="device_id" required
+                           placeholder="Ex: bfdf1234567890abcdef"
+                           class="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all">
+                    <p class="text-[10px] text-slate-400 mt-1">Encontre em: App Tuya Smart → Dispositivo → ⋮ Editar → ID do Dispositivo.</p>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="link" class="w-4 h-4"></i>
+                    Vincular Fechadura
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabela de Fechaduras -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 lg:col-span-2 space-y-4">
+            <div>
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4.5 h-4.5 text-slate-700"></i>
+                    Fechaduras Vinculadas
+                    <span class="ml-auto text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">{{ fechaduras|length }}</span>
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">Dispositivos IoT ativos na sua pousada</p>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200/60 rounded-xl bg-slate-50/50">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-slate-200/60 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-4 py-3">Quarto</th>
+                            <th class="px-4 py-3">Nome / Descrição</th>
+                            <th class="px-4 py-3">Device ID (Tuya)</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for f in fechaduras %}
+                        <tr class="hover:bg-white transition-colors">
+                            <td class="px-4 py-3">
+                                <span class="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-lg text-xs whitespace-nowrap">
+                                    {{ f.quarto.nome_identificacao }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 font-semibold text-slate-700">{{ f.nome_exibicao }}</td>
+                            <td class="px-4 py-3">
+                                <code class="text-[11px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded font-mono break-all">{{ f.device_id }}</code>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if f.is_online %}
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Online
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Offline
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <form method="POST"
+                                      onsubmit="return confirm('Remover a fechadura \'{{ f.nome_exibicao|escapejs }}\'? Reservas ativas perderão o acesso digital.');"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="excluir_fechadura">
+                                    <input type="hidden" name="fechadura_id" value="{{ f.id }}">
+                                    <button type="submit"
+                                            class="text-rose-600 hover:text-rose-800 transition-colors p-1.5 hover:bg-rose-50 rounded-lg cursor-pointer"
+                                            title="Remover Fechadura">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-10 text-center">
+                                <div class="flex flex-col items-center gap-2 text-slate-400">
+                                    <i data-lucide="lock-open" class="w-8 h-8 text-slate-300"></i>
+                                    <p class="text-xs italic">Nenhuma fechadura cadastrada ainda.</p>
+                                    <p class="text-[10px] text-slate-300">Preencha o formulário ao lado para vincular seu primeiro dispositivo.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if fechaduras %}
+            <div class="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200/70 rounded-xl">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+                <p class="text-[11px] text-amber-700 leading-normal">
+                    <strong>Atenção:</strong> Remover uma fechadura cancela a integração Tuya para novas reservas, mas não revoga senhas já programadas no dispositivo físico.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>

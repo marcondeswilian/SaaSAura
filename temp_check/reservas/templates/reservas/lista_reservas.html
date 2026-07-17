@@ -1,0 +1,835 @@
+{% extends 'base_painel.html' %}
+
+{% block title %}Lista de Reservas - AuraSaaS{% endblock %}
+{% block header_title %}Reservas da Pousada{% endblock %}
+
+{% block content %}
+
+            <!-- STATS QUICK BAR -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Total de Reservas</span>
+                        <span class="text-3xl font-extrabold text-slate-900">{{ reservas.count }}</span>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <i data-lucide="calendar-check" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Confirmadas</span>
+                        <span class="text-3xl font-extrabold text-emerald-600">
+                            {{ reservas_confirmadas_count }}
+                        </span>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                        <i data-lucide="check" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Valor Médio</span>
+                        <span class="text-3xl font-extrabold text-indigo-950">R$ {{ valor_medio|floatformat:2 }}</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 text-slate-600 rounded-lg">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BAR -->
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Listagem de Ocupação</h2>
+                    <p class="text-xs text-slate-500">Gerencie e envie as automações de check-in para seus hóspedes.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="openExportModal()" class="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md shadow-emerald-600/10 cursor-pointer">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Exportar FNRH</span>
+                    </button>
+                    <button onclick="openModal()" class="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-all shadow-md shadow-slate-900/10 cursor-pointer">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Nova Reserva</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- RESERVATIONS LIST / TABLE CARDS -->
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/75 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="px-6 py-4">Hóspede</th>
+                                <th class="px-6 py-4">Quarto</th>
+                                <th class="px-6 py-4">Período</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Valor Total</th>
+                                <th class="px-6 py-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            {% for r in reservas %}
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <!-- Hóspede -->
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <span class="font-semibold text-slate-900 block">{{ r.hospede.nome_completo|default:'Bloqueio' }}</span>
+                                        <span class="text-xs text-slate-400 block">{{ r.hospede.telefone|default:"Sem telefone cadastrado" }}</span>
+                                    </div>
+                                </td>
+                                
+                                <!-- Quarto -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="p-1 bg-slate-100 text-slate-700 text-xs font-bold rounded border border-slate-200/50">{{ r.quarto.nome_identificacao }}</span>
+                                        <span class="text-xs text-slate-500">{{ r.quarto.categoria.nome }}</span>
+                                    </div>
+                                </td>
+                                
+                                <!-- Período -->
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <span class="text-slate-800 font-medium block">{{ r.data_checkin|date:"d/m/Y" }} a {{ r.data_checkout|date:"d/m/Y" }}</span>
+                                        <span class="text-[10px] text-slate-400 block uppercase tracking-wider">
+                                            {% if r.checkin_concluido %}
+                                                <span class="text-emerald-600 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Check-in Online Concluído</span>
+                                            {% else %}
+                                                <span class="text-amber-600 font-semibold flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Check-in Pendente</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                
+                                <!-- Status -->
+                                <td class="px-6 py-4">
+                                    {% if r.status == 'confirmada' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Pago
+                                    </span>
+                                    {% elif r.status == 'sinal' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/50">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Sinal
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200/50">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                        Pendente
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Valor Total -->
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-slate-900">R$ {{ r.valor_total }}</span>
+                                </td>
+                                
+                                <!-- Ações -->
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <!-- Editar Reserva -->
+                                        <a href="{% url 'reserva-editar' r.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition-colors text-xs font-semibold" title="Editar Reserva">
+                                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            <span>Editar</span>
+                                        </a>
+                                        
+                                        <!-- WhatsApp -->
+                                        {% if r.hospede and r.hospede.link_whatsapp %}
+                                        <a href="{{ r.hospede.link_whatsapp }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 hover:border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-700 transition-colors text-xs font-semibold" title="Abrir conversa no WhatsApp">
+                                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                            <span>WhatsApp</span>
+                                        </a>
+                                        {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 text-xs font-semibold cursor-not-allowed" title="Sem telefone para WhatsApp">
+                                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                            <span>WhatsApp</span>
+                                        </span>
+                                        {% endif %}
+                                        
+                                        <!-- Copiar Check-in -->
+                                        {# NOTE: r.token_acesso is intentionally exposed here for the copy-link feature. #}
+                                        {# Each token is unique per reservation and grants limited guest-portal access only. #}
+                                        <button onclick="copiarLinkCheckin('{{ r.token_acesso }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 hover:border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 text-indigo-700 transition-colors text-xs font-semibold cursor-pointer" title="Copiar Link de Check-in Online">
+                                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                            <span>Copiar Link</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                    <div class="flex flex-col items-center justify-center gap-3">
+                                        <i data-lucide="inbox" class="w-10 h-10 text-slate-300"></i>
+                                        <div>
+                                            <span class="font-bold text-slate-500 block">Nenhuma reserva encontrada</span>
+                                            <span class="text-xs block text-slate-400">Comece cadastrando uma nova reserva usando o botão acima.</span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+
+    <!-- MODAL NOVA RESERVA -->
+    <div id="booking-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl border border-slate-200 flex flex-col overflow-hidden max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="calendar-plus" class="w-5 h-5 text-indigo-600"></i>
+                    <span>Cadastrar Nova Reserva</span>
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Form -->
+            <form action="{% url 'reserva-criar' %}" method="POST" class="flex flex-col overflow-y-auto" onsubmit="return validarFormularioReserva(this);">
+                {% csrf_token %}
+                <div class="p-6 space-y-6">
+                    <!-- Tipo de Registro Selector -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tipo de Lançamento</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-indigo-600 bg-indigo-50/20 text-indigo-700" id="label-tipo-reserva">
+                                <input type="radio" name="tipo_registro" value="reserva" checked class="hidden" onchange="toggleTipoRegistro('reserva')">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                <span>Reserva</span>
+                            </label>
+                            <label class="relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-slate-200 text-slate-600" id="label-tipo-bloqueio">
+                                <input type="radio" name="tipo_registro" value="bloqueio" class="hidden" onchange="toggleTipoRegistro('bloqueio')">
+                                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                                <span>Bloqueio (Manutenção)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Dates (Check-in / Check-out) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="checkin-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Entrada (Check-in) <span class="text-rose-500">*</span></label>
+                            <input type="date" id="checkin-date" name="data_checkin" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        </div>
+                        <div>
+                            <label for="checkout-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Saída (Check-out) <span class="text-rose-500">*</span></label>
+                            <input type="date" id="checkout-date" name="data_checkout" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                        </div>
+                    </div>
+
+                    <!-- Quarto(s), Status & Cobrança -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Quarto(s) <span class="text-rose-500">*</span></label>
+                            <div class="border border-slate-200 rounded-lg p-3 max-h-40 overflow-y-auto space-y-2 bg-slate-50" id="quarto-checkbox-container">
+                                <p class="text-xs text-slate-400 italic">Selecione as datas para ver os quartos livres</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div id="status-container">
+                                <label for="status-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Status <span class="text-rose-500">*</span></label>
+                                <select id="status-select" name="status" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                                    <option value="pendente" selected>Pendente</option>
+                                    <option value="sinal">Sinal</option>
+                                    <option value="confirmada">Pago / Confirmado</option>
+                                    <option value="finalizada">Finalizada (Check-out)</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            <div id="cobranca-container">
+                                <label for="cobranca-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Cobrança (Multi-Quartos)</label>
+                                <select id="cobranca-select" name="tipo_cobranca" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                                    <option value="unica" selected>Conta Única (Valor no 1º quarto)</option>
+                                    <option value="dividido">Dividir valor igualmente</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guest Selection (AJAX Suggest) -->
+                    <div id="guest-container" class="relative">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Hóspede <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="hospede-search" placeholder="Buscar hóspede por nome ou cadastrar novo..." class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm" autocomplete="off" required>
+                        </div>
+                        <!-- Hidden Field for ID -->
+                        <input type="hidden" id="hospede-id-input" name="hospede" required>
+                        
+                        <!-- Suggestions Dropdown -->
+                        <div id="hospede-suggestions" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden z-50">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+
+                    <!-- Motivo de Bloqueio (Only visible when block is selected) -->
+                    <div id="motivo-bloqueio-container" class="hidden">
+                        <label for="motivo-bloqueio-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Motivo do Bloqueio <span class="text-rose-500">*</span></label>
+                        <select id="motivo-bloqueio-select" name="motivo_bloqueio" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                            <option value="" disabled selected>Selecione o Motivo</option>
+                            {% for m in pousada.motivos_bloqueio.all %}
+                                <option value="{{ m.id }}">{{ m.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Valor Total & Sinal (opcional) -->
+                    <div id="valor-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="total-value" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Valor Total (R$) <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-3.5 text-slate-400 text-xs font-semibold">R$</span>
+                                <input type="number" step="0.01" id="total-value" name="valor_total" placeholder="0.00" class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sinal-value" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Valor do Sinal (R$)</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-3.5 text-slate-400 text-xs font-semibold">R$</span>
+                                <input type="number" step="0.01" id="sinal-value" name="valor_sinal" placeholder="Sinal (opcional)" class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sinal-metodo" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Forma do Sinal</label>
+                            <select id="sinal-metodo" name="metodo_pagamento_sinal" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm">
+                                {% for metodo in metodos_pagamento %}
+                                    <option value="{{ metodo.nome|lower }}">{{ metodo.nome }}</option>
+                                {% empty %}
+                                    <option value="pix">Pix (Padrão)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- FNRH Travel Fields (Collapsible/Advanced) -->
+                    <div id="fnrh-container" class="border-t border-slate-100 pt-4">
+                        <button type="button" onclick="toggleAdvancedFNRH()" class="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-wider focus:outline-none cursor-pointer">
+                            <span id="fnrh-toggle-text">Mostrar Dados da Viagem (FNRH)</span>
+                            <i id="fnrh-toggle-icon" data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                        </button>
+                        
+                        <div id="fnrh-fields" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <div>
+                                <label for="motivo-select" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Motivo da Viagem</label>
+                                <select id="motivo-select" name="motivo_viagem" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                                    <option value="" selected>Não Informado</option>
+                                    <option value="lazer">Lazer</option>
+                                    <option value="negocios">Negócios</option>
+                                    <option value="congresso">Congresso / Convenção</option>
+                                    <option value="parentes">Parentes / Amigos</option>
+                                    <option value="estudos">Estudos</option>
+                                    <option value="saude">Saúde</option>
+                                    <option value="compras">Compras</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transporte-select" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Meio de Transporte</label>
+                                <select id="transporte-select" name="meio_transporte" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                                    <option value="" selected>Não Informado</option>
+                                    <option value="aviao">Avião</option>
+                                    <option value="automovel">Automóvel</option>
+                                    <option value="onibus">Ônibus</option>
+                                    <option value="trem">Trem</option>
+                                    <option value="embarcacao">Embarcação</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="placa-veiculo" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Placa do Veículo</label>
+                                <input type="text" id="placa-veiculo" name="placa_veiculo" placeholder="Ex: ABC-1234" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                            </div>
+                            <div>
+                                <label for="ultima-procedencia" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Última Procedência (Cidade/UF)</label>
+                                <input type="text" id="ultima-procedencia" name="ultima_procedencia" placeholder="Cidade de onde veio" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="proximo-destino" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Próximo Destino (Cidade/UF)</label>
+                                <input type="text" id="proximo-destino" name="proximo_destino" placeholder="Cidade para onde vai" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-slate-900/10 cursor-pointer">
+                        Salvar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EXPORTAR FNRH -->
+    <div id="export-modal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5 text-emerald-600"></i>
+                    <span>Exportar Lote FNRH</span>
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Form -->
+            <form action="{% url 'exportar-fnrh' %}" method="GET" onsubmit="closeExportModal()" class="flex flex-col">
+                <div class="p-6 space-y-4">
+                    <p class="text-xs text-slate-500">Selecione o intervalo de datas de check-in para gerar o lote em formato CSV oficial.</p>
+                    
+                    <div>
+                        <label for="export-data-inicio" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Início</label>
+                        <input type="date" id="export-data-inicio" name="data_inicio" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                    </div>
+                    <div>
+                        <label for="export-data-fim" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Data de Fim</label>
+                        <input type="date" id="export-data-fim" name="data_fim" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm" required>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                    <button type="button" onclick="closeExportModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-emerald-600/10 cursor-pointer">
+                        Gerar Arquivo de Lote
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup Autocomplete Search
+            setupGuestAutocomplete();
+            
+            // Setup Intelligent Date Picker
+            setupDateAutomation();
+            
+            // Initialize Tipo Registro
+            toggleTipoRegistro('reserva');
+
+            // Check URL parameters to pre-fill and open modal
+            checkURLParams();
+        });
+
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomId = urlParams.get('room_id');
+            const startDate = urlParams.get('start_date');
+            
+            if (roomId || startDate) {
+                if (startDate) {
+                    const checkinInput = document.getElementById('checkin-date');
+                    if (checkinInput) {
+                        const dateOnly = startDate.split('T')[0];
+                        checkinInput.value = dateOnly;
+                        
+                        // Automatically set checkout date to next day
+                        const checkoutInput = document.getElementById('checkout-date');
+                        if (checkoutInput) {
+                            const checkinDate = new Date(dateOnly + 'T00:00:00');
+                            checkinDate.setDate(checkinDate.getDate() + 1);
+                            const yyyy = checkinDate.getFullYear();
+                            const mm = String(checkinDate.getMonth() + 1).padStart(2, '0');
+                            const dd = String(checkinDate.getDate()).padStart(2, '0');
+                            checkoutInput.value = `${yyyy}-${mm}-${dd}`;
+                        }
+                    }
+                }
+                
+                // Buscar quartos disponíveis e pré-selecionar o quarto vindo da URL
+                buscarQuartosDisponiveis(roomId);
+                
+                openModal();
+            }
+        }
+
+        function buscarQuartosDisponiveis(roomIdToSelect = null) {
+            const checkinVal = document.getElementById('checkin-date').value;
+            const checkoutVal = document.getElementById('checkout-date').value;
+            const container = document.getElementById('quarto-checkbox-container');
+            
+            if (!checkinVal || !checkoutVal) {
+                container.innerHTML = '<p class="text-xs text-slate-400 italic">Selecione as datas para ver os quartos livres</p>';
+                return;
+            }
+            
+            container.innerHTML = '<p class="text-xs text-slate-500 flex items-center gap-1.5"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i> Carregando quartos disponíveis...</p>';
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            
+            fetch(`/painel/reservas/api/quartos-disponiveis/?start=${checkinVal}&end=${checkoutVal}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro na requisição');
+                    return res.json();
+                })
+                .then(data => {
+                    container.innerHTML = '';
+                    if (data.length === 0) {
+                        container.innerHTML = '<p class="text-xs text-rose-500 font-semibold">Nenhum quarto disponível para este período.</p>';
+                        return;
+                    }
+                    
+                    data.forEach(q => {
+                        const label = document.createElement('label');
+                        label.className = 'flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-100 rounded-md cursor-pointer transition-colors text-sm select-none';
+                        
+                        const isChecked = roomIdToSelect && String(q.id) === String(roomIdToSelect);
+                        
+                        label.innerHTML = `
+                            <input type="checkbox" name="room_ids" value="${q.id}" ${isChecked ? 'checked' : ''} class="quarto-checkbox rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 border-slate-300">
+                            <span class="font-medium text-slate-700">${q.nome}</span>
+                        `;
+                        container.appendChild(label);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<p class="text-xs text-rose-500">Erro ao carregar quartos livres.</p>';
+                });
+        }
+
+        function validarFormularioReserva(form) {
+            const checkboxes = form.querySelectorAll('.quarto-checkbox');
+            let algumSelecionado = false;
+            checkboxes.forEach(cb => {
+                if (cb.checked) algumSelecionado = true;
+            });
+            
+            if (!algumSelecionado) {
+                showToast('Selecione pelo menos um quarto para prosseguir.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // Toggle Reserva vs Bloqueio
+        function toggleTipoRegistro(tipo) {
+            const labelReserva = document.getElementById('label-tipo-reserva');
+            const labelBloqueio = document.getElementById('label-tipo-bloqueio');
+            
+            const guestContainer = document.getElementById('guest-container');
+            const statusContainer = document.getElementById('status-container');
+            const cobrancaContainer = document.getElementById('cobranca-container');
+            const valorContainer = document.getElementById('valor-container');
+            const fnrhContainer = document.getElementById('fnrh-container');
+            const motivoBloqueioContainer = document.getElementById('motivo-bloqueio-container');
+            
+            const searchInput = document.getElementById('hospede-search');
+            const idInput = document.getElementById('hospede-id-input');
+            const statusSelect = document.getElementById('status-select');
+            const valorInput = document.getElementById('total-value');
+            const motivoBloqueioSelect = document.getElementById('motivo-bloqueio-select');
+            
+            if (tipo === 'bloqueio') {
+                // Change button style
+                labelReserva.className = "relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-slate-200 text-slate-600";
+                labelBloqueio.className = "relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-indigo-600 bg-indigo-50/20 text-indigo-700";
+                
+                // Hide fields
+                guestContainer.classList.add('hidden');
+                statusContainer.classList.add('hidden');
+                cobrancaContainer.classList.add('hidden');
+                valorContainer.classList.add('hidden');
+                fnrhContainer.classList.add('hidden');
+                
+                // Show block reason
+                motivoBloqueioContainer.classList.remove('hidden');
+                
+                // Remove required
+                searchInput.removeAttribute('required');
+                idInput.removeAttribute('required');
+                statusSelect.removeAttribute('required');
+                valorInput.removeAttribute('required');
+                
+                // Add required to block reason
+                motivoBloqueioSelect.setAttribute('required', 'required');
+            } else {
+                // Change button style
+                labelReserva.className = "relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-indigo-600 bg-indigo-50/20 text-indigo-700";
+                labelBloqueio.className = "relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 transition-all select-none font-semibold text-sm border-slate-200 text-slate-600";
+                
+                // Show fields
+                guestContainer.classList.remove('hidden');
+                statusContainer.classList.remove('hidden');
+                cobrancaContainer.classList.remove('hidden');
+                valorContainer.classList.remove('hidden');
+                fnrhContainer.classList.remove('hidden');
+                
+                // Hide block reason
+                motivoBloqueioContainer.classList.add('hidden');
+                
+                // Add required
+                searchInput.setAttribute('required', 'required');
+                idInput.setAttribute('required', 'required');
+                statusSelect.setAttribute('required', 'required');
+                valorInput.setAttribute('required', 'required');
+                
+                // Remove required from block reason
+                motivoBloqueioSelect.removeAttribute('required');
+            }
+        }
+
+        // Copy Link Action
+        function copiarLinkCheckin(token) {
+            const checkinUrl = `${window.location.origin}/hospede/meu-acesso/${token}/`;
+            
+            navigator.clipboard.writeText(checkinUrl)
+                .then(() => {
+                    showToast('Link de check-in copiado com sucesso!');
+                })
+                .catch(err => {
+                    console.error('Erro ao copiar link: ', err);
+                    showToast('Não foi possível copiar o link. Copie manualmente: ' + checkinUrl, 'error');
+                });
+        }
+
+        // Modal Controls
+        function openModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openExportModal() {
+            const modal = document.getElementById('export-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('opacity-100');
+            }, 10);
+        }
+
+        function closeExportModal() {
+            const modal = document.getElementById('export-modal');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Advanced FNRH Collapsible
+        function toggleAdvancedFNRH() {
+            const fields = document.getElementById('fnrh-fields');
+            const label = document.getElementById('fnrh-toggle-text');
+            const icon = document.getElementById('fnrh-toggle-icon');
+            
+            if (fields.classList.contains('hidden')) {
+                fields.classList.remove('hidden');
+                label.textContent = "Ocultar Dados da Viagem (FNRH)";
+                icon.setAttribute('data-lucide', 'chevron-up');
+            } else {
+                fields.classList.add('hidden');
+                label.textContent = "Mostrar Dados da Viagem (FNRH)";
+                icon.setAttribute('data-lucide', 'chevron-down');
+            }
+            lucide.createIcons();
+        }
+
+        // Intelligent Date Picker Automation
+        function setupDateAutomation() {
+            const checkinInput = document.getElementById('checkin-date');
+            const checkoutInput = document.getElementById('checkout-date');
+            
+            checkinInput.addEventListener('change', () => {
+                const checkinVal = checkinInput.value;
+                if (!checkinVal) return;
+                
+                const checkinDate = new Date(checkinVal + 'T00:00:00');
+                // Add 1 day
+                checkinDate.setDate(checkinDate.getDate() + 1);
+                
+                // Format Date back to YYYY-MM-DD
+                const yyyy = checkinDate.getFullYear();
+                const mm = String(checkinDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(checkinDate.getDate()).padStart(2, '0');
+                
+                checkoutInput.value = `${yyyy}-${mm}-${dd}`;
+                
+                // Trigger available rooms search
+                buscarQuartosDisponiveis();
+            });
+
+            checkoutInput.addEventListener('change', () => {
+                buscarQuartosDisponiveis();
+            });
+        }
+
+        // Autocomplete & In-line Guest Creation logic
+        function setupGuestAutocomplete() {
+            const searchInput = document.getElementById('hospede-search');
+            const idInput = document.getElementById('hospede-id-input');
+            const suggestionsDiv = document.getElementById('hospede-suggestions');
+            
+            let debounceTimeout = null;
+            
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim();
+                idInput.value = ''; // Clear selected ID if modified
+                
+                if (debounceTimeout) clearTimeout(debounceTimeout);
+                
+                if (!query) {
+                    suggestionsDiv.innerHTML = '';
+                    suggestionsDiv.classList.add('hidden');
+                    return;
+                }
+                
+                debounceTimeout = setTimeout(() => {
+                    fetch(`/api/hospedes/?q=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            suggestionsDiv.innerHTML = '';
+                            
+                            // Show matches
+                            if (data.length > 0) {
+                                data.forEach(item => {
+                                    const btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm flex items-center justify-between border-b border-slate-100 last:border-0';
+                                    // XSS-safe: use textContent instead of innerHTML
+                                    const nameSpan = document.createElement('span');
+                                    nameSpan.className = 'font-medium text-slate-800';
+                                    nameSpan.textContent = item.nome_completo;
+                                    const actionSpan = document.createElement('span');
+                                    actionSpan.className = 'text-xs text-slate-400';
+                                    actionSpan.textContent = 'Selecionar';
+                                    btn.appendChild(nameSpan);
+                                    btn.appendChild(actionSpan);
+                                    btn.addEventListener('click', () => {
+                                        selectGuest(item.id, item.nome_completo);
+                                    });
+                                    suggestionsDiv.appendChild(btn);
+                                });
+                            }
+                            
+                            // "Cadastrar novo hóspede" row
+                            const registerBtn = document.createElement('button');
+                            registerBtn.type = 'button';
+                            registerBtn.className = 'w-full px-4 py-3 text-left hover:bg-emerald-50 bg-emerald-50/20 text-sm text-emerald-700 flex items-center gap-2 border-t border-slate-100';
+                            // XSS-safe: build DOM elements with textContent instead of innerHTML
+                            const icon = document.createElement('i');
+                            icon.setAttribute('data-lucide', 'user-plus');
+                            icon.className = 'w-4 h-4 shrink-0';
+                            const labelSpan = document.createElement('span');
+                            const labelText = document.createTextNode('Cadastrar novo hóspede: ');
+                            const queryStrong = document.createElement('strong');
+                            queryStrong.className = 'underline';
+                            queryStrong.textContent = `"${query}"`;
+                            labelSpan.appendChild(labelText);
+                            labelSpan.appendChild(queryStrong);
+                            registerBtn.appendChild(icon);
+                            registerBtn.appendChild(labelSpan);
+                            registerBtn.addEventListener('click', () => {
+                                registerNewGuest(query);
+                            });
+                            suggestionsDiv.appendChild(registerBtn);
+                            
+                            // Update icons and show dropdown
+                            lucide.createIcons();
+                            suggestionsDiv.classList.remove('hidden');
+                        });
+                }, 250);
+            });
+            
+            function selectGuest(id, name) {
+                idInput.value = id;
+                searchInput.value = name;
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.add('hidden');
+            }
+            
+            function registerNewGuest(name) {
+                const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (!csrfElement) {
+                    alert('Erro de segurança: Token CSRF não encontrado.');
+                    return;
+                }
+                const csrftoken = csrfElement.value;
+                
+                fetch('/api/hospedes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ nome: name })
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(data => {
+                            throw new Error(data.mensagem || 'Falha ao cadastrar hóspede');
+                        });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    const inputBusca = document.getElementById('hospede-search');
+                    const inputId = document.getElementById('hospede-id-input');
+                    if (inputBusca) inputBusca.value = data.nome;
+                    if (inputId) inputId.value = data.id;
+                    
+                    const suggestionsDiv = document.getElementById('hospede-suggestions');
+                    if (suggestionsDiv) {
+                        suggestionsDiv.innerHTML = '';
+                        suggestionsDiv.classList.add('hidden');
+                    }
+                    const resultsDiv = document.getElementById('hospede-results');
+                    if (resultsDiv) {
+                        resultsDiv.innerHTML = '';
+                        resultsDiv.classList.add('hidden');
+                    }
+                    
+                    showToast(`Hóspede "${data.nome}" cadastrado e selecionado!`);
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Erro: ' + err.message);
+                });
+            }
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.classList.add('hidden');
+                }
+            });
+        }
+    </script>
+{% endblock %}
