@@ -32,6 +32,8 @@ if not SECRET_KEY:
 # Em produção, defina: ALLOWED_HOSTS=seudominio.com,www.seudominio.com
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://saas.auradecunha.com.br,http://127.0.0.1:8001,http://localhost:8001').split(',')
+
 
 # Application definition
 
@@ -174,6 +176,7 @@ LOGIN_REDIRECT_URL = '/painel/dashboard/'
 
 # Security headers (production only)
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
