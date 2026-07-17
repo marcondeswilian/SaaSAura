@@ -96,7 +96,7 @@ DATABASES = {
 }
 
 # Fallback explícito caso o dj-database-url falhe por conta de caracteres especiais na URL
-if not DATABASES['default'] or not DATABASES['default'].get('USER'):
+if not DATABASES['default'] or not DATABASES['default'].get('NAME') or not DATABASES['default'].get('USER'):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB', 'aurasaas_prod'),
