@@ -1,0 +1,188 @@
+<!-- TAB CANAIS DE ORIGEM -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Form Criar Novo Canal -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-500"></i> Novo Canal de Origem
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">Cadastre plataformas de reservas (ex: Booking, Airbnb, WhatsApp, Balcão)</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="novo_canal_origem">
+
+            <div>
+                <label for="nome_canal" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome do Canal</label>
+                <input type="text" name="nome" id="nome_canal" required placeholder="Ex: Booking.com, Airbnb, Balcão"
+                       class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Cor da Badge</label>
+                <div class="grid grid-cols-6 gap-2 mb-2">
+                    <button type="button" onclick="selectColorCanal('#003580', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #003580;" title="Booking Blue"></button>
+                    <button type="button" onclick="selectColorCanal('#FF5A5F', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #FF5A5F;" title="Airbnb Red"></button>
+                    <button type="button" onclick="selectColorCanal('#25D366', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #25D366;" title="WhatsApp Green"></button>
+                    <button type="button" onclick="selectColorCanal('#4F46E5', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #4F46E5;" title="Indigo"></button>
+                    <button type="button" onclick="selectColorCanal('#0D9488', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #0D9488;" title="Teal"></button>
+                    <button type="button" onclick="selectColorCanal('#E1306C', this)" class="w-7 h-7 rounded-full focus:outline-none transition-all hover:scale-105 active:scale-95" style="background-color: #E1306C;" title="Instagram Pink"></button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="color" id="cor_picker_canal" class="w-7 h-7 border-0 p-0 bg-transparent cursor-pointer rounded-full" value="#4F46E5" onchange="updateColorCanalFromPicker(this.value)">
+                    <input type="text" name="cor" id="cor_canal" value="#4F46E5" required
+                           class="block w-full px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold uppercase text-slate-700">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all border border-indigo-700 flex items-center justify-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Canal
+            </button>
+        </form>
+    </div>
+
+    <!-- Lista de Canais -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 md:col-span-2 space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="share-2" class="w-4.5 h-4.5 text-slate-700"></i> Canais de Origem Ativos
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Gerencie as fontes e origens das suas reservas</p>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
+                {{ canais_origem|length }} canal(is)
+            </span>
+        </div>
+
+        <div class="overflow-hidden border border-slate-100 rounded-xl">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th class="py-3 px-4">Canal</th>
+                        <th class="py-3 px-4 text-center">Status</th>
+                        <th class="py-3 px-4 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                    {% for canal in canais_origem %}
+                    <tr class="hover:bg-slate-50/60 transition-colors">
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full shadow-sm"
+                                  style="background-color: {{ canal.cor }}15; color: {{ canal.cor }}; border: 1px solid {{ canal.cor }}30;">
+                                <span class="w-2 h-2 rounded-full mr-2" style="background-color: {{ canal.cor }};"></span>
+                                {{ canal.nome }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            {% if canal.ativo %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Ativo
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                                    Inativo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button type="button" onclick="openModalEditarCanal('{{ canal.id }}', '{{ canal.nome|escapejs }}', '{{ canal.cor }}', {{ canal.ativo|yesno:'true,false' }})"
+                                        class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <form method="POST" onsubmit="return confirm('Deseja realmente excluir o canal {{ canal.nome|escapejs }}?');" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="acao" value="excluir_canal_origem">
+                                    <input type="hidden" name="canal_id" value="{{ canal.id }}">
+                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Excluir">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="py-8 text-center text-xs text-slate-400 italic">
+                            Nenhum canal de origem cadastrado.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Canal -->
+<div id="modalEditarCanal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-100">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-5 h-5 text-indigo-600"></i> Editar Canal de Origem
+            </h3>
+            <button type="button" onclick="closeModalEditarCanal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="editar_canal_origem">
+            <input type="hidden" name="canal_id" id="edit_canal_id">
+
+            <div>
+                <label for="edit_canal_nome" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Nome do Canal</label>
+                <input type="text" name="nome" id="edit_canal_nome" required
+                       class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label for="edit_canal_cor" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Cor da Badge</label>
+                <div class="flex items-center gap-2">
+                    <input type="color" id="edit_cor_picker" class="w-8 h-8 border-0 p-0 bg-transparent cursor-pointer rounded-full" onchange="document.getElementById('edit_canal_cor').value = this.value">
+                    <input type="text" name="cor" id="edit_canal_cor" required
+                           class="block w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold uppercase text-slate-700">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+                <input type="checkbox" name="ativo" id="edit_canal_ativo" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                <label for="edit_canal_ativo" class="text-sm font-semibold text-slate-700">Canal Ativo</label>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" onclick="closeModalEditarCanal()" class="px-4 py-2 text-slate-600 text-sm font-semibold hover:bg-slate-100 rounded-xl transition-all">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectColorCanal(color, btn) {
+        document.getElementById('cor_canal').value = color;
+        document.getElementById('cor_picker_canal').value = color;
+    }
+    function updateColorCanalFromPicker(color) {
+        document.getElementById('cor_canal').value = color;
+    }
+
+    function openModalEditarCanal(id, nome, cor, ativo) {
+        document.getElementById('edit_canal_id').value = id;
+        document.getElementById('edit_canal_nome').value = nome;
+        document.getElementById('edit_canal_cor').value = cor;
+        document.getElementById('edit_cor_picker').value = cor;
+        document.getElementById('edit_canal_ativo').checked = ativo;
+        document.getElementById('modalEditarCanal').classList.remove('hidden');
+    }
+    function closeModalEditarCanal() {
+        document.getElementById('modalEditarCanal').classList.add('hidden');
+    }
+</script>

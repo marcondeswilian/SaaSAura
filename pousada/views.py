@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Case, When, Value, IntegerField
 from admin_saas.models import ClienteSaaS, NivelAcesso
-from .models import Pousada, MotivoBloqueio, CategoriaQuarto, Quarto, MetodoPagamentoConfig, LogAuditoria, ChecklistItem, RegistroLimpeza, ItemLimpezaConcluido, OrdemServico, Fechadura
+from .models import Pousada, MotivoBloqueio, CategoriaQuarto, Quarto, MetodoPagamentoConfig, CanalOrigem, LogAuditoria, ChecklistItem, RegistroLimpeza, ItemLimpezaConcluido, OrdemServico, Fechadura
 from hospedes.models import Tag
 from django.utils import timezone
 from reservas.models import TemplateMensagem
@@ -296,6 +296,53 @@ def pousada_config_view(request):
             messages.success(request, f"Template '{nome}' excluído com sucesso.")
             return redirect('/painel/pousada/config/?tab=mensagens')
 
+        elif acao == 'novo_canal_origem':
+            nome = request.POST.get('nome', '').strip()
+            cor = request.POST.get('cor', '#6b7280').strip()
+            if not nome:
+                messages.error(request, "O nome do canal de origem é obrigatório.")
+            else:
+                CanalOrigem.objects.create(pousada=pousada, nome=nome, cor=cor)
+                messages.success(request, f"Canal de origem '{nome}' criado com sucesso!")
+            return redirect('/painel/pousada/config/?tab=canais')
+
+        elif acao == 'editar_canal_origem':
+            canal_id = request.POST.get('canal_id')
+            canal = get_object_or_404(CanalOrigem, id=canal_id, pousada=pousada)
+            nome = request.POST.get('nome', '').strip()
+            cor = request.POST.get('cor', '#6b7280').strip()
+            ativo = request.POST.get('ativo') == 'on'
+            if not nome:
+                messages.error(request, "O nome do canal de origem é obrigatório.")
+            else:
+                canal.nome = nome
+                canal.cor = cor
+                canal.ativo = ativo
+                canal.save()
+                messages.success(request, f"Canal de origem '{nome}' atualizado com sucesso!")
+            return redirect('/painel/pousada/config/?tab=canais')
+
+        elif acao == 'excluir_canal_origem':
+            canal_id = request.POST.get('canal_id')
+            canal = get_object_or_404(CanalOrigem, id=canal_id, pousada=pousada)
+            nome = canal.nome
+            canal.delete()
+            messages.success(request, f"Canal de origem '{nome}' excluído com sucesso.")
+            return redirect('/painel/pousada/config/?tab=canais')
+
+    # Seed default channels if empty
+    if CanalOrigem.objects.filter(pousada=pousada).count() == 0:
+        canais_padrao = [
+            ('Booking.com', '#003580'),
+            ('Airbnb', '#FF5A5F'),
+            ('WhatsApp', '#25D366'),
+            ('Balcão / Direto', '#4F46E5'),
+            ('Site / Motor', '#0D9488'),
+            ('Instagram', '#E1306C'),
+        ]
+        for nome_c, cor_c in canais_padrao:
+            CanalOrigem.objects.get_or_create(pousada=pousada, nome=nome_c, defaults={'cor': cor_c})
+
     # Read lists
     tags = Tag.objects.filter(pousada=pousada).order_by('nome')
     motivos_bloqueio = MotivoBloqueio.objects.filter(pousada=pousada).order_by('nome')
@@ -303,6 +350,7 @@ def pousada_config_view(request):
     quartos = Quarto.objects.filter(pousada=pousada).select_related('categoria').order_by('nome_identificacao')
     metodos_pagamento = MetodoPagamentoConfig.objects.filter(pousada=pousada, ativo=True).order_by('nome')
     checklist_itens = ChecklistItem.objects.filter(pousada=pousada, ativo=True).order_by('id')
+    canais_origem = CanalOrigem.objects.filter(pousada=pousada).order_by('nome')
 
     fechaduras = Fechadura.objects.filter(quarto__pousada=pousada).select_related('quarto').order_by('quarto__nome_identificacao')
     templates_mensagem = TemplateMensagem.objects.filter(pousada=pousada).order_by('nome')
@@ -344,6 +392,7 @@ def pousada_config_view(request):
         'quartos': quartos,
         'metodos_pagamento': metodos_pagamento,
         'checklist_itens': checklist_itens,
+        'canais_origem': canais_origem,
         'fechaduras': fechaduras,
         'templates_mensagem': templates_mensagem,
         'preview_template': preview_template,

@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Sum
 from decimal import Decimal
-from pousada.models import Pousada, Quarto # Adicionamos o Quarto aqui
+from pousada.models import Pousada, Quarto, CanalOrigem # Adicionamos o Quarto aqui
 from hospedes.models import Hospede
 import uuid
 
@@ -21,6 +21,8 @@ class Reserva(models.Model):
     grupo = models.ForeignKey(Grupo, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name="Grupo")
     hospede = models.ForeignKey(Hospede, on_delete=models.CASCADE, related_name='reservas', null=True, blank=True, verbose_name="Hóspede")
     quarto = models.ForeignKey(Quarto, on_delete=models.PROTECT, related_name='reservas', verbose_name="Quarto")
+    canal_origem = models.ForeignKey(CanalOrigem, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name="Canal de Origem")
+
 
     data_checkin = models.DateField(verbose_name="Data de Check-in")
     data_checkout = models.DateField(verbose_name="Data de Check-out")

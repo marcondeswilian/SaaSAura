@@ -93,6 +93,21 @@ class MetodoPagamentoConfig(models.Model):
     def __str__(self):
         return f"{self.nome} ({self.pousada.nome})"
 
+class CanalOrigem(models.Model):
+    pousada = models.ForeignKey(Pousada, on_delete=models.CASCADE, related_name='canais_origem', verbose_name="Pousada")
+    nome = models.CharField(max_length=100, verbose_name="Nome do Canal")
+    cor = models.CharField(max_length=20, default='#6b7280', verbose_name="Cor da Badge")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+
+    class Meta:
+        verbose_name = "Canal de Origem"
+        verbose_name_plural = "Canais de Origem"
+        ordering = ['nome']
+
+    def __str__(self):
+        return f"{self.nome} ({self.pousada.nome})"
+
+
 
 class LogAuditoria(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='logs_auditoria', verbose_name="Usuário")

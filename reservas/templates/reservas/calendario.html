@@ -7,6 +7,10 @@
     @import url('https://unpkg.com/tippy.js@6/dist/tippy.css');
 
     /* Custom spacing and styles for FullCalendar standard layout */
+    .fc *, .fc *:before, .fc *:after {
+        box-sizing: border-box !important;
+    }
+
     .fc-theme-standard td, .fc-theme-standard th {
         border-color: #e2e8f0 !important;
     }

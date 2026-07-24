@@ -53,6 +53,10 @@
             <i data-lucide="credit-card" class="w-4.5 h-4.5"></i>
             Métodos de Pagamento
         </a>
+        <a href="/painel/pousada/config/?tab=canais" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'canais' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
+            <i data-lucide="share-2" class="w-4.5 h-4.5"></i>
+            Canais de Origem
+        </a>
         <a href="{% url 'gerenciar-equipe' %}" class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap {% if tab == 'equipe' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/15{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300{% endif %}">
             <i data-lucide="users" class="w-4.5 h-4.5"></i>
             Equipe
@@ -86,6 +90,8 @@
         {% include 'pousada/tab_quartos.html' %}
     {% elif tab == 'pagamentos' %}
         {% include 'pousada/tab_pagamentos.html' %}
+    {% elif tab == 'canais' %}
+        {% include 'pousada/tab_canais.html' %}
     {% elif tab == 'equipe' %}
         {% include 'pousada/tab_equipe.html' %}
     {% elif tab == 'auditoria' %}

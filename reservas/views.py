@@ -117,7 +117,7 @@ def reserva_lista_view(request):
         return render(request, 'reservas/lista_reservas.html', {'error': 'Você não possui uma pousada vinculada ao seu usuário.'})
         
     reservas_list = Reserva.objects.filter(pousada=pousada).select_related(
-        'hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio'
+        'hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio', 'canal_origem'
     ).order_by('data_checkin')
     
     # Paginação (PERF-01) - 20 itens por página
@@ -129,8 +129,9 @@ def reserva_lista_view(request):
     reservas_confirmadas_count = reservas_list.filter(status='confirmada').count()
     from django.db.models import Avg
     valor_medio = reservas_list.filter(is_bloqueio=False).aggregate(media=Avg('valor_total'))['media'] or Decimal('0.00')
-    from pousada.models import MetodoPagamentoConfig
+    from pousada.models import MetodoPagamentoConfig, CanalOrigem
     metodos_pagamento = MetodoPagamentoConfig.objects.filter(pousada=pousada, ativo=True).order_by('nome')
+    canais_origem = CanalOrigem.objects.filter(pousada=pousada, ativo=True).order_by('nome')
     return render(request, 'reservas/lista_reservas.html', {
         'reservas': reservas,
         'quartos': quartos,
@@ -138,6 +139,7 @@ def reserva_lista_view(request):
         'reservas_confirmadas_count': reservas_confirmadas_count,
         'valor_medio': valor_medio,
         'metodos_pagamento': metodos_pagamento,
+        'canais_origem': canais_origem,
     })
 
 @login_required
@@ -229,6 +231,12 @@ def reserva_criar_view(request):
     ultima_procedencia = request.POST.get('ultima_procedencia', '')
     proximo_destino = request.POST.get('proximo_destino', '')
     
+    canal_origem_id = request.POST.get('canal_origem')
+    canal_origem_obj = None
+    if canal_origem_id:
+        from pousada.models import CanalOrigem
+        canal_origem_obj = CanalOrigem.objects.filter(id=canal_origem_id, pousada=pousada).first()
+    
     if not (hospede_id and data_checkin and data_checkout and valor_total):
         messages.error(request, 'Preencha todos os campos obrigatórios.')
         return redirect('reserva-lista')
@@ -293,6 +301,7 @@ def reserva_criar_view(request):
                     grupo=grupo,
                     hospede=hospede,
                     quarto=quarto,
+                    canal_origem=canal_origem_obj,
                     data_checkin=data_checkin,
                     data_checkout=data_checkout,
                     valor_total=valor_reserva.quantize(Decimal('0.01')),
@@ -467,7 +476,7 @@ def reserva_editar_view(request, pk):
             messages.success(request, f'Lançamento #{pk} cancelado/excluído com sucesso!')
             return redirect('reserva-lista')
 
-        form = ReservaForm(request.POST, instance=reserva)
+        form = ReservaForm(request.POST, instance=reserva, pousada=pousada)
         if form.is_valid():
             # BUG-C06: Verificar conflito de quarto na edição
             quarto = form.cleaned_data['quarto']
@@ -493,13 +502,14 @@ def reserva_editar_view(request, pk):
             messages.error(request, 'Por favor, verifique os campos informados.')
                 
     else:
-        form = ReservaForm(instance=reserva)
+        form = ReservaForm(instance=reserva, pousada=pousada)
         
     quartos = Quarto.objects.filter(pousada=pousada, ativo=True)
     hospedes = Hospede.objects.filter(pousada=pousada).order_by('nome_completo')
     
-    from pousada.models import MetodoPagamentoConfig
+    from pousada.models import MetodoPagamentoConfig, CanalOrigem
     metodos_pagamento = MetodoPagamentoConfig.objects.filter(pousada=pousada, ativo=True).order_by('nome')
+    canais_origem = CanalOrigem.objects.filter(pousada=pousada, ativo=True).order_by('nome')
     
     from django.urls import reverse
     url_acesso = request.build_absolute_uri(reverse('portal_hospede', kwargs={'token': reserva.token_acesso}))
@@ -511,7 +521,8 @@ def reserva_editar_view(request, pk):
         'hospedes': hospedes,
         'pousada': pousada,
         'metodos_pagamento': metodos_pagamento,
-        'url_acesso': url_acesso
+        'canais_origem': canais_origem,
+        'url_acesso': url_acesso,
     })
 
 

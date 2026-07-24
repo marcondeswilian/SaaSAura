@@ -30,11 +30,17 @@ class ConfiguracaoTuyaAdmin(admin.ModelAdmin):
 class FechaduraAdmin(admin.ModelAdmin):
     list_display = ('nome_exibicao', 'quarto', 'device_id', 'is_online')
 
-from .models import MetodoPagamentoConfig, LogAuditoria, ChecklistItem, OrdemServico, RegistroLimpeza
+from .models import MetodoPagamentoConfig, CanalOrigem, LogAuditoria, ChecklistItem, OrdemServico, RegistroLimpeza
 
 @admin.register(MetodoPagamentoConfig)
 class MetodoPagamentoConfigAdmin(admin.ModelAdmin):
     list_display = ('nome', 'pousada', 'ativo')
+
+@admin.register(CanalOrigem)
+class CanalOrigemAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'pousada', 'cor', 'ativo')
+    list_filter = ('pousada', 'ativo')
+
 
 @admin.register(LogAuditoria)
 class LogAuditoriaAdmin(admin.ModelAdmin):
