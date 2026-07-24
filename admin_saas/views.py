@@ -163,6 +163,7 @@ def criar_nivel_acesso(request):
     pode_financeiro = request.POST.get('pode_acessar_financeiro') == 'on'
     pode_config = request.POST.get('pode_acessar_configuracoes') == 'on'
     pode_governanca = request.POST.get('pode_acessar_governanca') == 'on'
+    pode_mapa = request.POST.get('pode_apenas_bloquear_mapa') == 'on'
 
     try:
         NivelAcesso.objects.create(
@@ -172,6 +173,7 @@ def criar_nivel_acesso(request):
             pode_acessar_financeiro=pode_financeiro,
             pode_acessar_configuracoes=pode_config,
             pode_acessar_governanca=pode_governanca,
+            pode_apenas_bloquear_mapa=pode_mapa,
         )
         messages.success(request, f"Nível de acesso '{nome}' criado com sucesso!")
     except Exception as e:
@@ -195,6 +197,7 @@ def atualizar_nivel_acesso(request, pk):
     pode_financeiro = request.POST.get('pode_acessar_financeiro') == 'on'
     pode_config = request.POST.get('pode_acessar_configuracoes') == 'on'
     pode_governanca = request.POST.get('pode_acessar_governanca') == 'on'
+    pode_mapa = request.POST.get('pode_apenas_bloquear_mapa') == 'on'
 
     try:
         nivel.nome = nome
@@ -203,6 +206,7 @@ def atualizar_nivel_acesso(request, pk):
         nivel.pode_acessar_financeiro = pode_financeiro
         nivel.pode_acessar_configuracoes = pode_config
         nivel.pode_acessar_governanca = pode_governanca
+        nivel.pode_apenas_bloquear_mapa = pode_mapa
         nivel.save()
         messages.success(request, f"Nível de acesso '{nome}' atualizado com sucesso!")
     except Exception as e:

@@ -21,6 +21,28 @@ class ReservaSerializer(serializers.ModelSerializer):
             'hospede_nome', 'celular', 'valor_total', 'saldo_devedor'
         ]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        is_restricted = False
+        
+        if request and request.user.is_authenticated and not request.user.is_superuser:
+            cliente = getattr(request.user, 'cliente_saas', None)
+            if cliente and cliente.nivel_acesso:
+                nivel = cliente.nivel_acesso
+                if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
+                    is_restricted = True
+        
+        if is_restricted and not instance.is_bloqueio:
+            data['title'] = 'Quarto Ocupado'
+            data['hospede_nome'] = 'Ocupado'
+            data['celular'] = ''
+            data['valor_total'] = 0.0
+            data['saldo_devedor'] = 0.0
+            data['color'] = '#94a3b8' # Slate 400 - cinza neutro
+            
+        return data
+
     def get_allDay(self, obj):
         return False
 

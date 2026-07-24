@@ -137,13 +137,22 @@ class CalendarioView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         is_restricted_map = False
+        pousada = None
         if not user.is_superuser:
+            from pousada.utils import get_pousada_for_user
+            pousada = get_pousada_for_user(user)
             cliente = getattr(user, 'cliente_saas', None)
             if cliente and cliente.nivel_acesso:
                 nivel = cliente.nivel_acesso
                 if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
                     is_restricted_map = True
+        
         context['is_restricted_map'] = is_restricted_map
+        
+        if is_restricted_map and pousada:
+            from pousada.models import MotivoBloqueio
+            context['motivos_bloqueio'] = MotivoBloqueio.objects.filter(pousada=pousada, ativo=True)
+            
         return context
 
 
@@ -219,7 +228,20 @@ def reserva_criar_view(request):
     
     if not room_ids:
         messages.error(request, 'Pelo menos um quarto deve ser selecionado.')
-        return redirect('reserva-lista')
+        return redirect('calendario' if request.POST.get('from_calendario') else 'reserva-lista')
+        
+    # Verificar se é restrito
+    is_restricted = False
+    if not request.user.is_superuser:
+        cliente = getattr(request.user, 'cliente_saas', None)
+        if cliente and cliente.nivel_acesso:
+            nivel = cliente.nivel_acesso
+            if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
+                is_restricted = True
+                
+    if is_restricted and tipo_registro != 'bloqueio':
+        messages.error(request, 'Você só tem permissão para criar bloqueios.')
+        return redirect('calendario')
         
     # Criar Grupo se houver mais de um quarto selecionado
     grupo = None
@@ -279,7 +301,7 @@ def reserva_criar_view(request):
             import logging
             logging.getLogger(__name__).exception("Erro ao criar bloqueio")
             messages.error(request, 'Erro interno ao criar bloqueio.')
-        return redirect('reserva-lista')
+        return redirect('calendario' if request.POST.get('from_calendario') else 'reserva-lista')
         
     hospede_id = request.POST.get('hospede')
     valor_total = request.POST.get('valor_total')
@@ -528,6 +550,27 @@ def reserva_editar_view(request, pk):
         return redirect('reserva-lista')
 
     reserva = get_object_or_404(Reserva, id=pk, pousada=pousada)
+    
+    is_restricted = False
+    if not request.user.is_superuser:
+        cliente = getattr(request.user, 'cliente_saas', None)
+        if cliente and cliente.nivel_acesso:
+            nivel = cliente.nivel_acesso
+            if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
+                is_restricted = True
+                
+    if is_restricted:
+        if request.method == 'POST' and request.POST.get('acao') == 'excluir':
+            if not reserva.is_bloqueio:
+                messages.error(request, 'Você só pode excluir bloqueios.')
+                return redirect('calendario')
+            reserva.delete()
+            messages.success(request, f'Lançamento #{pk} cancelado/excluído com sucesso!')
+            return redirect('calendario' if request.POST.get('from_calendario') else 'reserva-lista')
+        else:
+            messages.error(request, 'Você não tem permissão para acessar essa página.')
+            return redirect('calendario')
+
     from .forms import ReservaForm
     
     if request.method == 'POST':

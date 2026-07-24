@@ -61,15 +61,24 @@ class CheckAcessoSaaS:
 
                     if url_name in perm_map:
                         perm_field = perm_map[url_name]
-                        if not getattr(nivel, perm_field, False):
+                        has_perm = getattr(nivel, perm_field, False)
+                        
+                        # Exceção para o novo nível de "Apenas Bloqueio de Mapa"
+                        if not has_perm and nivel.pode_apenas_bloquear_mapa:
+                            if url_name in ['calendario', 'api-reservas', 'api-reserva-update', 'api-quartos', 'reserva-criar', 'reserva-editar']:
+                                has_perm = True
+
+                        if not has_perm:
                             # Se for API, retornar 403
                             if request.path_info.startswith('/api/') or request.headers.get('x-requested-with') == 'XMLHttpRequest':
                                 return JsonResponse({'error': 'Você não tem permissão para acessar este recurso.'}, status=403)
                             
                             # Encontrar fallback url
                             fallback_url = None
-                            if nivel.pode_acessar_reservas:
+                            if nivel.pode_acessar_reservas or nivel.pode_apenas_bloquear_mapa:
                                 fallback_url = 'calendario'
+                            elif nivel.pode_acessar_governanca:
+                                fallback_url = 'governanca-mobile'
                             elif nivel.pode_acessar_crm:
                                 fallback_url = 'hospede-lista'
                             elif nivel.pode_acessar_configuracoes:

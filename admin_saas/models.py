@@ -8,6 +8,7 @@ class NivelAcesso(models.Model):
     pode_acessar_financeiro = models.BooleanField(default=True, verbose_name="Acesso ao Financeiro")
     pode_acessar_configuracoes = models.BooleanField(default=True, verbose_name="Acesso a Configurações")
     pode_acessar_governanca = models.BooleanField(default=True, verbose_name="Acesso a Governança")
+    pode_apenas_bloquear_mapa = models.BooleanField(default=False, verbose_name="Apenas Bloqueio de Mapa")
 
     class Meta:
         verbose_name = "Nível de Acesso"

@@ -256,10 +256,17 @@
                                 <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
                                 {% endif %}
                             </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if nivel.pode_apenas_bloquear_mapa %}
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-600 mx-auto"></i>
+                                {% else %}
+                                <i data-lucide="x" class="w-5 h-5 text-rose-500 mx-auto"></i>
+                                {% endif %}
+                            </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-3.5">
                                     <!-- Editar Nível -->
-                                    <button type="button" onclick="openEditNivelModal('{{ nivel.id }}', '{{ nivel.nome }}', {{ nivel.pode_acessar_reservas|yesno:'true,false' }}, {{ nivel.pode_acessar_crm|yesno:'true,false' }}, {{ nivel.pode_acessar_financeiro|yesno:'true,false' }}, {{ nivel.pode_acessar_configuracoes|yesno:'true,false' }}, {{ nivel.pode_acessar_governanca|yesno:'true,false' }})" class="p-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg hover:border-slate-300 transition-colors cursor-pointer" title="Editar Nível">
+                                    <button type="button" onclick="openEditNivelModal('{{ nivel.id }}', '{{ nivel.nome }}', {{ nivel.pode_acessar_reservas|yesno:'true,false' }}, {{ nivel.pode_acessar_crm|yesno:'true,false' }}, {{ nivel.pode_acessar_financeiro|yesno:'true,false' }}, {{ nivel.pode_acessar_configuracoes|yesno:'true,false' }}, {{ nivel.pode_acessar_governanca|yesno:'true,false' }}, {{ nivel.pode_apenas_bloquear_mapa|yesno:'true,false' }})" class="p-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg hover:border-slate-300 transition-colors cursor-pointer" title="Editar Nível">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
 
@@ -483,6 +490,14 @@
                             <span class="text-[10px] text-slate-500 block">Permite visualizar o dashboard de governança e gerenciar limpezas.</span>
                         </div>
                     </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" name="pode_apenas_bloquear_mapa" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Apenas Bloqueio de Mapa</span>
+                            <span class="text-[10px] text-slate-500 block">Permite bloquear/desbloquear quartos, sem visualizar dados sensíveis (ideal para recepção noturna restrita).</span>
+                        </div>
+                    </label>
                 </div>
             </div>
             
@@ -562,6 +577,14 @@
                         <div>
                             <span class="text-sm font-semibold text-slate-800 block">Governança (Housekeeping)</span>
                             <span class="text-[10px] text-slate-500 block">Permite visualizar o dashboard de governança e gerenciar limpezas.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-150 rounded-xl hover:bg-slate-100/60 transition-colors cursor-pointer">
+                        <input type="checkbox" id="edit_pode_mapa" name="pode_apenas_bloquear_mapa" class="rounded text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-800 block">Apenas Bloqueio de Mapa</span>
+                            <span class="text-[10px] text-slate-500 block">Permite bloquear/desbloquear quartos, sem visualizar dados sensíveis (ideal para recepção noturna restrita).</span>
                         </div>
                     </label>
                 </div>
@@ -679,7 +702,7 @@
     }
 
     // Modal Editar Nível de Acesso
-    function openEditNivelModal(id, nome, reservas, crm, financeiro, config, governanca) {
+    function openEditNivelModal(id, nome, reservas, crm, financeiro, config, governanca, mapa) {
         const modal = document.getElementById('edit-nivel-modal');
         const form = document.getElementById('edit-nivel-form');
         
@@ -689,6 +712,7 @@
         document.getElementById('edit_pode_financeiro').checked = financeiro;
         document.getElementById('edit_pode_config').checked = config;
         document.getElementById('edit_pode_governanca').checked = governanca;
+        document.getElementById('edit_pode_mapa').checked = mapa;
         
         form.action = `/painel-saas/niveis/${id}/atualizar/`;
         

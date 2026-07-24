@@ -150,6 +150,63 @@
     <!-- Calendar Div -->
     <div id='calendar' class="overflow-x-auto"></div>
 </div>
+
+{% if is_restricted_map %}
+<!-- Modal Criar Bloqueio Rápido -->
+<div id="modal-block" class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+        <form method="POST" action="{% url 'reserva-criar' %}">
+            {% csrf_token %}
+            <input type="hidden" name="tipo_registro" value="bloqueio">
+            <input type="hidden" name="from_calendario" value="true">
+            <input type="hidden" name="room_ids" id="block_room_id" value="">
+            
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-5 h-5 text-indigo-600"></i>
+                    Bloquear Quarto
+                </h3>
+                <button type="button" onclick="document.getElementById('modal-block').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1.5">Data Check-in</label>
+                        <input type="date" name="data_checkin" id="block_data_checkin" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" required readonly>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1.5">Data Check-out</label>
+                        <input type="date" name="data_checkout" id="block_data_checkout" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" required readonly>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1.5">Motivo do Bloqueio</label>
+                    <select name="motivo_bloqueio" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" required>
+                        <option value="">Selecione um motivo...</option>
+                        {% for motivo in motivos_bloqueio %}
+                        <option value="{{ motivo.id }}">{{ motivo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('modal-block').classList.add('hidden')" class="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold cursor-pointer">Cancelar</button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold cursor-pointer">Confirmar Bloqueio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="delete-block-form" method="POST" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="acao" value="excluir">
+    <input type="hidden" name="from_calendario" value="true">
+</form>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -318,11 +375,32 @@
                 },
                 select: function(info) {
                     if (info.resource) {
-                        window.location.href = '/painel/reservas/?room_id=' + info.resource.id + '&start_date=' + info.startStr;
+                        const isRestricted = {{ is_restricted_map|yesno:"true,false" }};
+                        if (isRestricted) {
+                            document.getElementById('block_room_id').value = info.resource.id;
+                            document.getElementById('block_data_checkin').value = info.startStr;
+                            document.getElementById('block_data_checkout').value = info.endStr;
+                            document.getElementById('modal-block').classList.remove('hidden');
+                        } else {
+                            window.location.href = '/painel/reservas/?room_id=' + info.resource.id + '&start_date=' + info.startStr;
+                        }
                     }
                 },
                 eventClick: function(info) {
-                    window.location.href = '/painel/reservas/' + info.event.id + '/editar/';
+                    const isRestricted = {{ is_restricted_map|yesno:"true,false" }};
+                    if (isRestricted) {
+                        if (info.event.extendedProps.is_bloqueio) {
+                            if (confirm("Deseja realmente desbloquear este quarto?")) {
+                                const form = document.getElementById('delete-block-form');
+                                form.action = '/painel/reservas/' + info.event.id + '/editar/';
+                                form.submit();
+                            }
+                        } else {
+                            alert("Você não tem permissão para editar essa reserva.");
+                        }
+                    } else {
+                        window.location.href = '/painel/reservas/' + info.event.id + '/editar/';
+                    }
                 },
                 eventDrop: function(info) {
                     atualizarReserva(info);
