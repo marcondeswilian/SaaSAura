@@ -11,9 +11,16 @@
             <i data-lucide="edit" class="w-5 h-5 text-indigo-600"></i>
             <span class="font-bold text-slate-900 text-sm">Modificar dados da reserva</span>
         </div>
-        <a href="{% url 'imprimir_fnrh' reserva.id %}" target="_blank" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-750 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i> Imprimir FNRH
-        </a>
+        <div class="flex items-center gap-2">
+            {% if reserva.hospede and reserva.hospede.link_whatsapp %}
+            <a href="{{ reserva.hospede.link_whatsapp }}" target="_blank" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 text-emerald-700 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp
+            </a>
+            {% endif %}
+            <a href="{% url 'imprimir_fnrh' reserva.id %}" target="_blank" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-750 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i> Imprimir FNRH
+            </a>
+        </div>
     </div>
 
     <!-- Form -->
