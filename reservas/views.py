@@ -151,7 +151,7 @@ class CalendarioView(LoginRequiredMixin, TemplateView):
         
         if is_restricted_map and pousada:
             from pousada.models import MotivoBloqueio
-            context['motivos_bloqueio'] = MotivoBloqueio.objects.filter(pousada=pousada, ativo=True)
+            context['motivos_bloqueio'] = MotivoBloqueio.objects.filter(pousada=pousada)
             
         return context
 
