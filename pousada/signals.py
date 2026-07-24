@@ -23,9 +23,14 @@ def log_reserva_save(sender, instance, created, **kwargs):
 def log_reserva_delete(sender, instance, **kwargs):
     user = get_current_user()
     if user and user.is_authenticated:
+        try:
+            hospede_nome = str(instance.hospede) if instance.hospede_id else "Nenhum"
+        except Exception:
+            hospede_nome = f"Desconhecido (ID {instance.hospede_id})"
+            
         LogAuditoria.objects.create(
             usuario=user,
-            acao=f"Excluiu/Cancelou a reserva {instance.id} (Hóspede: {instance.hospede})",
+            acao=f"Excluiu/Cancelou a reserva {instance.id} (Hóspede: {hospede_nome})",
             alvo_id=instance.id,
             pousada=instance.pousada
         )
