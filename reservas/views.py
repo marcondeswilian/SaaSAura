@@ -733,7 +733,7 @@ def portal_hospede(request, token):
     pousada = reserva.pousada
 
     # Verificar se o quarto possui uma fechadura física vinculada
-    fechadura = quarto.fechaduras.first()
+    fechadura = quarto.fechaduras.first() if quarto else None
     tem_fechadura = fechadura is not None
 
     # BUG-04: Impedir acesso se reserva está cancelada
@@ -843,8 +843,8 @@ def portal_hospede(request, token):
     mensagem_pos_checkin_processada = ""
     video_embed_url = ""
     if pousada.mensagem_pos_checkin:
-        senha_quarto = quarto.senha_acesso or "Não configurada"
-        nome_quarto = quarto.nome if quarto else "Não definido"
+        senha_quarto = quarto.senha_acesso if quarto and quarto.senha_acesso else "Não configurada"
+        nome_quarto = quarto.nome_identificacao if quarto else "Não definido"
         mensagem_pos_checkin_processada = pousada.mensagem_pos_checkin.replace('{{ senha_quarto }}', senha_quarto).replace('{{ nome_quarto }}', nome_quarto)
     
     if pousada.video_pos_checkin:
