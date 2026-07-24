@@ -23,7 +23,11 @@ class ReservaUpdateAPI(generics.UpdateAPIView):
     serializer_class = ReservaUpdateSerializer
 
     def get_queryset(self):
-        return Reserva.objects.filter(pousada__dono=self.request.user)
+        from pousada.utils import get_pousada_for_user
+        pousada = get_pousada_for_user(self.request.user)
+        if not pousada:
+            return Reserva.objects.none()
+        return Reserva.objects.filter(pousada=pousada)
 
 # Esta view vai listar todas as reservas em formato JSON
 class ReservaListAPI(generics.ListAPIView):
@@ -31,8 +35,12 @@ class ReservaListAPI(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        from pousada.utils import get_pousada_for_user
+        pousada = get_pousada_for_user(self.request.user)
+        if not pousada:
+            return Reserva.objects.none()
         return Reserva.objects.filter(
-            pousada__dono=self.request.user
+            pousada=pousada
         ).select_related('hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio')
 
 # Esta view vai listar todos os quartos em formato JSON
@@ -41,7 +49,11 @@ class QuartoListAPI(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Quarto.objects.filter(pousada__dono=self.request.user).select_related('categoria')
+        from pousada.utils import get_pousada_for_user
+        pousada = get_pousada_for_user(self.request.user)
+        if not pousada:
+            return Quarto.objects.none()
+        return Quarto.objects.filter(pousada=pousada).select_related('categoria')
 
 
 @login_required
