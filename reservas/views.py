@@ -844,7 +844,8 @@ def portal_hospede(request, token):
     video_embed_url = ""
     if pousada.mensagem_pos_checkin:
         senha_quarto = quarto.senha_acesso or "Não configurada"
-        mensagem_pos_checkin_processada = pousada.mensagem_pos_checkin.replace('{{ senha_quarto }}', senha_quarto)
+        nome_quarto = quarto.nome if quarto else "Não definido"
+        mensagem_pos_checkin_processada = pousada.mensagem_pos_checkin.replace('{{ senha_quarto }}', senha_quarto).replace('{{ nome_quarto }}', nome_quarto)
     
     if pousada.video_pos_checkin:
         video_embed_url = pousada.video_pos_checkin

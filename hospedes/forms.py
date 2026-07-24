@@ -13,6 +13,13 @@ class HospedeForm(forms.ModelForm):
         widgets = {
             'data_nascimento': forms.DateInput(attrs={'type': 'date'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # BUGFIX: Garantir que apenas nome_completo seja obrigatório no CRM interno
+        for field_name, field in self.fields.items():
+            if field_name != 'nome_completo':
+                field.required = False
 
 class TagForm(forms.ModelForm):
     class Meta:

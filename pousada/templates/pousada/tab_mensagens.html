@@ -9,7 +9,7 @@
         </h3>
         <p class="text-xs text-slate-500 mt-1 leading-relaxed">
             Configure a mensagem e/ou vídeo que o hóspede verá logo após finalizar o Check-in Online pelo celular. 
-            Você pode inserir a variável <code class="font-bold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded">{{ senha_quarto }}</code> para informar a senha cadastrada no quarto.
+            Você pode inserir a variável <code class="font-bold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded">{{ senha_quarto }}</code> para informar a senha e <code class="font-bold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded">{{ nome_quarto }}</code> para o nome do quarto.
         </p>
     </div>
 
@@ -22,7 +22,7 @@
                 <label for="mensagem_pos_checkin" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Texto da Mensagem</label>
                 <textarea name="mensagem_pos_checkin" id="mensagem_pos_checkin" rows="5" placeholder="Olá! Sua reserva está confirmada. A senha da sua porta é: {{ senha_quarto }}"
                           class="block w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium font-mono text-xs">{{ pousada.mensagem_pos_checkin|default_if_none:"" }}</textarea>
-                <p class="text-[10px] text-slate-400 mt-1">Dica: Use <b>{{ senha_quarto }}</b> para injetar a senha de acesso configurada no quarto.</p>
+                <p class="text-[10px] text-slate-400 mt-1">Dica: Use <b>{{ senha_quarto }}</b> para a senha e <b>{{ nome_quarto }}</b> para o nome do quarto.</p>
             </div>
 
             <div class="space-y-4">

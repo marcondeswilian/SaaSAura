@@ -211,4 +211,50 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const telInput = document.getElementById('telefone');
+    if (telInput) {
+        telInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '');
+            if (x.length > 11) x = x.slice(0, 11);
+            if (x.length === 0) {
+                e.target.value = '';
+                return;
+            }
+            if (x.length <= 2) {
+                e.target.value = '(' + x;
+            } else if (x.length <= 6) {
+                e.target.value = '(' + x.slice(0, 2) + ') ' + x.slice(2);
+            } else if (x.length <= 10) {
+                e.target.value = '(' + x.slice(0, 2) + ') ' + x.slice(2, 6) + '-' + x.slice(6);
+            } else {
+                e.target.value = '(' + x.slice(0, 2) + ') ' + x.slice(2, 7) + '-' + x.slice(7);
+            }
+        });
+    }
+
+    const cpfInput = document.getElementById('cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '');
+            if (x.length > 11) x = x.slice(0, 11);
+            if (x.length === 0) {
+                e.target.value = '';
+                return;
+            }
+            if (x.length <= 3) {
+                e.target.value = x;
+            } else if (x.length <= 6) {
+                e.target.value = x.slice(0, 3) + '.' + x.slice(3);
+            } else if (x.length <= 9) {
+                e.target.value = x.slice(0, 3) + '.' + x.slice(3, 6) + '.' + x.slice(6);
+            } else {
+                e.target.value = x.slice(0, 3) + '.' + x.slice(3, 6) + '.' + x.slice(6, 9) + '-' + x.slice(9);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
