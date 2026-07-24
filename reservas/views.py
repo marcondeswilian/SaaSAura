@@ -183,7 +183,8 @@ def reserva_lista_view(request):
     reservas_list = Reserva.objects.filter(
         pousada=pousada,
         data_checkin__lte=data_fim,
-        data_checkout__gte=data_inicio
+        data_checkout__gte=data_inicio,
+        is_bloqueio=False
     ).select_related(
         'hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio', 'canal_origem'
     ).order_by('data_checkin')
@@ -578,7 +579,7 @@ def reserva_editar_view(request, pk):
         if acao == 'excluir':
             reserva.delete()
             messages.success(request, f'Lançamento #{pk} cancelado/excluído com sucesso!')
-            return redirect('reserva-lista')
+            return redirect('calendario' if request.POST.get('from_calendario') else 'reserva-lista')
 
         form = ReservaForm(request.POST, instance=reserva, pousada=pousada)
         if form.is_valid():

@@ -388,18 +388,28 @@
                 },
                 eventClick: function(info) {
                     const isRestricted = {{ is_restricted_map|yesno:"true,false" }};
-                    if (isRestricted) {
-                        if (info.event.extendedProps.is_bloqueio) {
-                            if (confirm("Deseja realmente desbloquear este quarto?")) {
-                                const form = document.getElementById('delete-block-form');
-                                form.action = '/painel/reservas/' + info.event.id + '/editar/';
-                                form.submit();
+                    if (info.event.extendedProps.is_bloqueio) {
+                        if (confirm("Este quarto está bloqueado: " + info.event.title + "\n\nDeseja remover o bloqueio e liberar o quarto?")) {
+                            const form = document.getElementById('delete-block-form');
+                            form.action = '/painel/reservas/' + info.event.id + '/editar/';
+                            
+                            // Include flag so view redirects back to calendar
+                            if (!form.querySelector('input[name="from_calendario"]')) {
+                                let input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'from_calendario';
+                                input.value = '1';
+                                form.appendChild(input);
                             }
-                        } else {
-                            alert("Você não tem permissão para editar essa reserva.");
+                            
+                            form.submit();
                         }
                     } else {
-                        window.location.href = '/painel/reservas/' + info.event.id + '/editar/';
+                        if (isRestricted) {
+                            alert("Você não tem permissão para editar essa reserva.");
+                        } else {
+                            window.location.href = '/painel/reservas/' + info.event.id + '/editar/';
+                        }
                     }
                 },
                 eventDrop: function(info) {
