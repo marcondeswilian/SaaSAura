@@ -12,26 +12,22 @@ from django.contrib.auth.models import User
 def test():
     user = User.objects.first()
     if not user:
-        print('No users found.')
         return
     
     from pousada.models import Pousada
-    pousada = getattr(user, 'pousada_owner', None)
-    if not pousada:
-        pousada = Pousada.objects.first()
+    pousada = getattr(user, 'pousada_owner', None) or Pousada.objects.first()
     
     from hospedes.models import Hospede
     h = Hospede.objects.filter(pousada=pousada).first()
-    if not h:
-        print('No hospede found for pousada.')
-        return
     
     c = Client(SERVER_NAME='localhost')
     c.force_login(user)
     
-    print(f'Testing edit page for hospede {h.id}')
+    print(f'Testing POST invalid edit page for hospede {h.id}')
     try:
-        response = c.get(f'/painel/hospedes/{h.id}/editar/', HTTP_HOST='localhost')
+        response = c.post(f'/painel/hospedes/{h.id}/editar/', {
+            'nome_completo': ''  # Invalid since it's required
+        }, HTTP_HOST='localhost')
         print(f'Status: {response.status_code}')
         if response.status_code == 500:
             print('ERROR CONTENT:')

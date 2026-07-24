@@ -57,6 +57,8 @@ class CheckAcessoSaaS:
                         # Financeiro
                         'registrar-pagamento': 'pode_acessar_financeiro',
                         'editar-pagamento': 'pode_acessar_financeiro',
+                        # Dashboard
+                        'dashboard': 'pode_acessar_reservas',
                     }
 
                     if url_name in perm_map:

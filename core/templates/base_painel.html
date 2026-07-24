@@ -49,11 +49,13 @@
                     <span>Dashboard</span>
                 </a>
                 {% endif %}
-                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_reservas %}
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_reservas or request.user.cliente_saas.nivel_acesso.pode_apenas_bloquear_mapa %}
                 <a href="{% url 'calendario' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'calendario' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
                     <i data-lucide="calendar" class="w-4 h-4"></i>
                     <span>Mapa de Reservas</span>
                 </a>
+                {% endif %}
+                {% if request.user.is_superuser or not request.user.cliente_saas.nivel_acesso or request.user.cliente_saas.nivel_acesso.pode_acessar_reservas %}
                 <a href="{% url 'reserva-lista' %}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium {% if request.resolver_match.url_name == 'reserva-lista' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}text-slate-300{% endif %}">
                     <i data-lucide="list" class="w-4 h-4"></i>
                     <span>Lista de Reservas</span>

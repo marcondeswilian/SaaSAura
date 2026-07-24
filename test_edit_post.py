@@ -29,9 +29,12 @@ def test():
     c = Client(SERVER_NAME='localhost')
     c.force_login(user)
     
-    print(f'Testing edit page for hospede {h.id}')
+    print(f'Testing POST edit page for hospede {h.id}')
     try:
-        response = c.get(f'/painel/hospedes/{h.id}/editar/', HTTP_HOST='localhost')
+        response = c.post(f'/painel/hospedes/{h.id}/editar/', {
+            'nome_completo': h.nome_completo,
+            'data_nascimento': '2000-01-01'
+        }, HTTP_HOST='localhost')
         print(f'Status: {response.status_code}')
         if response.status_code == 500:
             print('ERROR CONTENT:')
