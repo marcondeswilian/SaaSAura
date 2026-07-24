@@ -29,6 +29,19 @@ class ReservaUpdateAPI(generics.UpdateAPIView):
             return Reserva.objects.none()
         return Reserva.objects.filter(pousada=pousada)
 
+    def perform_update(self, serializer):
+        user = self.request.user
+        if not user.is_superuser:
+            cliente = getattr(user, 'cliente_saas', None)
+            if cliente and cliente.nivel_acesso:
+                nivel = cliente.nivel_acesso
+                if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
+                    # Só pode mexer se for bloqueio
+                    if not serializer.instance.is_bloqueio:
+                        from rest_framework.exceptions import PermissionDenied
+                        raise PermissionDenied("Você não tem permissão para alterar reservas de hóspedes. Apenas bloqueios.")
+        serializer.save()
+
 # Esta view vai listar todas as reservas em formato JSON
 class ReservaListAPI(generics.ListAPIView):
     serializer_class = ReservaSerializer
@@ -112,12 +125,26 @@ class CalendarioView(LoginRequiredMixin, TemplateView):
                             not na.pode_acessar_reservas and
                             not na.pode_acessar_crm and
                             not na.pode_acessar_financeiro and
-                            not na.pode_acessar_configuracoes
+                            not na.pode_acessar_configuracoes and
+                            not na.pode_apenas_bloquear_mapa
                         )
                         if is_operational:
                             from django.shortcuts import redirect
                             return redirect('governanca-mobile')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        is_restricted_map = False
+        if not user.is_superuser:
+            cliente = getattr(user, 'cliente_saas', None)
+            if cliente and cliente.nivel_acesso:
+                nivel = cliente.nivel_acesso
+                if nivel.pode_apenas_bloquear_mapa and not nivel.pode_acessar_reservas:
+                    is_restricted_map = True
+        context['is_restricted_map'] = is_restricted_map
+        return context
 
 
 @login_required
