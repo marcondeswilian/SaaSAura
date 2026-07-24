@@ -841,6 +841,8 @@ def dashboard_view(request):
         })
 
     # Ação: Ordens de Serviço em Aberto
+    prioridade_map = {'alta': 'alta', 'media': 'media', 'baixa': 'baixa'}
+    badge_map = {'alta': 'Urgente', 'media': 'Manutenção', 'baixa': 'Ajuste'}
     for os in ordens_ativas:
         acoes_outras.append({
             'tipo': 'manutencao',
