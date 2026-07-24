@@ -63,6 +63,7 @@ class Reserva(models.Model):
     
     checkin_concluido = models.BooleanField(default=False, verbose_name="Check-in Concluído")
     checkin_online_realizado = models.BooleanField(default=False, verbose_name="Check-in Online Realizado")
+    pre_checkin_enviado = models.BooleanField(default=False, verbose_name="Link de Pré-checkin Enviado")
     hospede_cpf = models.CharField(max_length=14, blank=True, null=True, verbose_name="CPF do Hóspede")
     fnrh_exportado = models.BooleanField(default=False, verbose_name="FNRH Exportada")
     

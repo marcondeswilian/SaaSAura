@@ -378,8 +378,14 @@
                         const isRestricted = {{ is_restricted_map|yesno:"true,false" }};
                         if (isRestricted) {
                             document.getElementById('block_room_id').value = info.resource.id;
-                            document.getElementById('block_data_checkin').value = info.startStr;
-                            document.getElementById('block_data_checkout').value = info.endStr;
+                            
+                            // Converter para formato YYYY-MM-DD para o input type="date"
+                            const startStr = info.startStr.split('T')[0];
+                            // Se for apenas 1 dia clicado e não tiver endStr, usar o startStr
+                            const endStr = info.endStr ? info.endStr.split('T')[0] : startStr;
+                            
+                            document.getElementById('block_data_checkin').value = startStr;
+                            document.getElementById('block_data_checkout').value = endStr;
                             document.getElementById('modal-block').classList.remove('hidden');
                         } else {
                             window.location.href = '/painel/reservas/?room_id=' + info.resource.id + '&start_date=' + info.startStr;

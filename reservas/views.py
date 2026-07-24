@@ -271,7 +271,7 @@ def reserva_criar_view(request):
         motivo_bloqueio_id = request.POST.get('motivo_bloqueio')
         if not (data_checkin and data_checkout and motivo_bloqueio_id):
             messages.error(request, 'Preencha todos os campos obrigatórios para o bloqueio.')
-            return redirect('reserva-lista')
+            return redirect('calendario' if request.POST.get('from_calendario') else 'reserva-lista')
             
         try:
             from pousada.models import MotivoBloqueio
@@ -725,6 +725,17 @@ def dashboard_view(request):
         messages.error(request, "Você não possui uma pousada vinculada ao seu usuário.")
         return redirect('reserva-lista')
 
+    if request.method == 'POST' and request.POST.get('acao') == 'marcar_pre_checkin_enviado':
+        reserva_id = request.POST.get('reserva_id')
+        if reserva_id:
+            try:
+                r = Reserva.objects.get(id=reserva_id, pousada=pousada)
+                r.pre_checkin_enviado = True
+                r.save(update_fields=['pre_checkin_enviado'])
+            except Reserva.DoesNotExist:
+                pass
+        return redirect('dashboard')
+
     # Get local current time/date
     today = timezone.localdate()
 
@@ -774,12 +785,13 @@ def dashboard_view(request):
     checkouts_pendentes_count = len(checkouts_hoje)
 
     # 5. Timeline / Ações Imediatas
-    acoes_imediatas = []
+    acoes_limpeza = []
+    acoes_outras = []
 
     # Ação: Limpeza Pendente (quartos status 'sujo')
     quartos_sujos = [q for q in quartos if q.status_limpeza == 'sujo']
     for q in quartos_sujos:
-        acoes_imediatas.append({
+        acoes_limpeza.append({
             'tipo': 'limpeza',
             'titulo': f"Limpeza Pendente: Quarto {q.nome_identificacao}",
             'descricao': f"O quarto {q.nome_identificacao} ({q.categoria.nome}) está marcado como sujo e necessita de higienização.",
@@ -791,7 +803,7 @@ def dashboard_view(request):
     # Ação: Check-in Pendente (reservas de hoje pendentes)
     for r in checkins_hoje:
         hospede_nome = r.hospede.nome_completo if r.hospede else "Hóspede não informado"
-        acoes_imediatas.append({
+        acoes_outras.append({
             'tipo': 'checkin',
             'titulo': f"Check-in Pendente: {hospede_nome}",
             'descricao': f"Entrada prevista para hoje no Quarto {r.quarto.nome_identificacao} ({r.quarto.categoria.nome}).",
@@ -800,11 +812,37 @@ def dashboard_view(request):
             'link': f"/painel/reservas/{r.id}/editar/",
         })
 
-    # Ação: OS de Manutenção (abertas/em andamento)
+    # Ação: Check-out Pendente (reservas finalizando hoje)
+    for r in checkouts_hoje:
+        hospede_nome = r.hospede.nome_completo if r.hospede else "Hóspede não informado"
+        acoes_outras.append({
+            'tipo': 'checkout',
+            'titulo': f"Check-out Pendente: {hospede_nome}",
+            'descricao': f"Saída prevista para hoje no Quarto {r.quarto.nome_identificacao} ({r.quarto.categoria.nome}).",
+            'prioridade': 'alta',
+            'badge': 'Check-out',
+            'link': f"/painel/reservas/{r.id}/editar/",
+        })
+
+    # Ação: Pagamentos Vencendo Hoje
+    pagamentos_hoje = Pagamento.objects.filter(
+        pousada=pousada,
+        data_vencimento=today,
+        status='pendente'
+    )
+    for p in pagamentos_hoje:
+        acoes_outras.append({
+            'tipo': 'financeiro',
+            'titulo': f"Pagamento Pendente: R$ {p.valor}",
+            'descricao': f"O pagamento associado à Reserva #{p.reserva_id} vence hoje.",
+            'prioridade': 'media',
+            'badge': 'Financeiro',
+            'link': '/painel/financeiro/',
+        })
+
+    # Ação: Ordens de Serviço em Aberto
     for os in ordens_ativas:
-        prioridade_map = {'alta': 'alta', 'media': 'media', 'baixa': 'baixa'}
-        badge_map = {'alta': 'Urgente', 'media': 'Manutenção', 'baixa': 'Ajuste'}
-        acoes_imediatas.append({
+        acoes_outras.append({
             'tipo': 'manutencao',
             'titulo': f"OS #{os.id} - {os.get_tipo_servico_display()} no Quarto {os.quarto.nome_identificacao}",
             'descricao': os.descricao or f"Serviço de {os.get_tipo_servico_display()} pendente.",
@@ -813,9 +851,43 @@ def dashboard_view(request):
             'link': '/painel/governanca/?tab=manutencao-tab',
         })
 
+    # Ação: Enviar Link de Pré-Checkin (WhatsApp)
+    from datetime import timedelta
+    checkins_proximos = [
+        r for r in reservas_ativas
+        if not r.is_bloqueio
+        and r.status in ['pendente', 'sinal', 'confirmada']
+        and today <= (r.data_checkin.date() if hasattr(r.data_checkin, 'date') else r.data_checkin) <= today + timedelta(days=2)
+    ]
+    for r in checkins_proximos:
+        telefone = r.hospede.telefone if r.hospede else ""
+        if telefone:
+            num_limpo = "".join([c for c in telefone if c.isdigit()])
+            if num_limpo:
+                if not num_limpo.startswith('55') and len(num_limpo) >= 10:
+                    num_limpo = f"55{num_limpo}"
+                import urllib.parse
+                base_url = f"{request.scheme}://{request.get_host()}"
+                link_portal = f"{base_url}/hospede/meu-acesso/{r.token_acesso}/"
+                mensagem = f"Aqui está o link para fazer seu pre-checkin online: {link_portal}\nPrecisando de algo estamos a disposição."
+                whatsapp_url = f"https://wa.me/{num_limpo}?text={urllib.parse.quote(mensagem)}"
+                
+                hospede_nome = r.hospede.nome_completo if r.hospede else "Hóspede não informado"
+                acoes_outras.append({
+                    'tipo': 'whatsapp',
+                    'id': r.id,
+                    'enviado': r.pre_checkin_enviado,
+                    'titulo': f"Enviar Pré-checkin: {hospede_nome}",
+                    'descricao': f"Chegada em {(r.data_checkin.date() if hasattr(r.data_checkin, 'date') else r.data_checkin).strftime('%d/%m/%Y')}. Link via WhatsApp.",
+                    'prioridade': 'media',
+                    'badge': 'Comunicação',
+                    'link': whatsapp_url,
+                })
+
     # Sort actions: alta priority first, then media, then baixa
     prioridade_peso = {'alta': 3, 'media': 2, 'baixa': 1}
-    acoes_imediatas.sort(key=lambda x: prioridade_peso.get(x['prioridade'], 0), reverse=True)
+    acoes_limpeza.sort(key=lambda x: prioridade_peso.get(x.get('prioridade', 'media'), 0), reverse=True)
+    acoes_outras.sort(key=lambda x: (not x.get('enviado', False), prioridade_peso.get(x.get('prioridade', 'media'), 0)), reverse=True)
 
     return render(request, 'reservas/dashboard_operacoes.html', {
         'pousada': pousada,
@@ -823,7 +895,8 @@ def dashboard_view(request):
         'receita_dia': receita_dia,
         'checkins_previstos_count': checkins_previstos_count,
         'checkouts_pendentes_count': checkouts_pendentes_count,
-        'acoes_imediatas': acoes_imediatas,
+        'acoes_limpeza': acoes_limpeza,
+        'acoes_outras': acoes_outras,
     })
 
 
