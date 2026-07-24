@@ -109,12 +109,14 @@ def hospede_editar_view(request, pk):
         form = HospedeForm(instance=hospede)
 
     hospede_tags_ids = list(hospede.tags.values_list('id', flat=True))
+    reservas_hospede = hospede.reservas.all().order_by('-data_checkin')
 
     return render(request, 'hospedes/hospede_form.html', {
         'hospede': hospede,
         'form': form,
         'tags_pousada': tags_pousada,
         'hospede_tags_ids': hospede_tags_ids,
+        'reservas_hospede': reservas_hospede,
         'action': 'Editar'
     })
 

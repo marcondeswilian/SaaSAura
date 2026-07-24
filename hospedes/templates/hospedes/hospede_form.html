@@ -188,6 +188,63 @@
                 </div>
             </div>
 
+            {% if action == 'Editar' and reservas_hospede %}
+            <!-- Section 5: Reservations History -->
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Histórico de Reservas</h3>
+                        <p class="text-xs text-slate-500">Reservas passadas e futuras deste hóspede</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse bg-white">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Período</th>
+                                <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quarto</th>
+                                <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for r in reservas_hospede %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3">
+                                    <div class="text-sm font-semibold text-slate-700">{{ r.data_checkin|date:"d/m/Y" }} a {{ r.data_checkout|date:"d/m/Y" }}</div>
+                                    <div class="text-xs text-slate-400">{{ r.noites }} noite(s)</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="text-sm text-slate-600">{{ r.quarto.nome_identificacao|default:r.quarto.nome|default:"-" }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if r.status == 'pendente' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">Pendente</span>
+                                    {% elif r.status == 'confirmada' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">Confirmada</span>
+                                    {% elif r.status == 'concluida' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">Concluída</span>
+                                    {% elif r.status == 'cancelada' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700">Cancelada</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <a href="{% url 'reserva-editar' r.pk %}" target="_blank" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-slate-200/50 hover:border-indigo-200" title="Ver Detalhes da Reserva">
+                                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Submit action block -->
             <div class="p-6 md:p-8 bg-slate-50/50 flex justify-end gap-3">
                 {% if action == 'Editar' %}
