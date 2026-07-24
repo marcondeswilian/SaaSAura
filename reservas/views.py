@@ -900,6 +900,22 @@ def imprimir_fnrh_view(request, pk):
 
     reserva = get_object_or_404(Reserva, id=pk, pousada=pousada)
     ficha = getattr(reserva, 'ficha_fnrh', None)
+    
+    if not ficha and reserva.hospede:
+        h = reserva.hospede
+        ficha = {
+            'nome_completo': h.nome_completo,
+            'email': h.email,
+            'telefone': h.telefone,
+            'data_nascimento': h.data_nascimento,
+            'nacionalidade': h.nacionalidade,
+            'cpf_passaporte': h.cpf or h.numero_documento,
+            'documento_identidade': h.numero_documento if h.tipo_documento != 'CPF' else '',
+            'cep': h.cep,
+            'logradouro': h.endereco,
+            'cidade': h.cidade,
+            'estado': h.estado,
+        }
 
     return render(request, 'reservas/fnrh_imprimir.html', {
         'reserva': reserva,
