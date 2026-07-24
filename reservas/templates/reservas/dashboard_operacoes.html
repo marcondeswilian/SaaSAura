@@ -95,33 +95,35 @@
     <!-- TIMELINE / AÇÕES IMEDIATAS -->
     <div class="space-y-4">
         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-            <div class="flex items-center gap-2">
-                <span class="relative flex h-2.5 w-2.5">
+            <div class="flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                 </span>
                 <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider">Ações Imediatas & Pendências</h3>
             </div>
-            <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-[10px] font-bold">{{ acoes_imediatas|length }} pendências</span>
         </div>
 
-        <div class="grid grid-cols-1 gap-4">
-            {% for acao in acoes_imediatas %}
+        <!-- Tabs Navigation -->
+        <div class="border-b border-slate-200 mb-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button type="button" onclick="switchTab('limpeza')" id="tab-btn-limpeza" class="border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Limpeza ({{ acoes_limpeza|length }})
+                </button>
+                <button type="button" onclick="switchTab('outras')" id="tab-btn-outras" class="border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2">
+                    <i data-lucide="layout-list" class="w-4 h-4"></i> Outras Ações ({{ acoes_outras|length }})
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Limpeza -->
+        <div id="tab-content-limpeza" class="grid grid-cols-1 gap-4">
+            {% for acao in acoes_limpeza %}
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                
                 <!-- Action Content -->
                 <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border
-                        {% if acao.tipo == 'checkin' %}bg-indigo-50 border-indigo-100 text-indigo-600
-                        {% elif acao.tipo == 'limpeza' %}bg-purple-50 border-purple-100 text-purple-600
-                        {% else %}bg-amber-50 border-amber-100 text-amber-600{% endif %}">
-                        {% if acao.tipo == 'checkin' %}
-                            <i data-lucide="user-plus" class="w-5 h-5"></i>
-                        {% elif acao.tipo == 'limpeza' %}
-                            <i data-lucide="sparkles" class="w-5 h-5"></i>
-                        {% else %}
-                            <i data-lucide="wrench" class="w-5 h-5"></i>
-                        {% endif %}
+                    <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border bg-purple-50 border-purple-100 text-purple-600">
+                        <i data-lucide="sparkles" class="w-5 h-5"></i>
                     </div>
                     
                     <div class="space-y-1">
@@ -142,16 +144,103 @@
                 <a href="{{ acao.link }}" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-indigo-50 border border-slate-250 hover:border-indigo-100 hover:text-indigo-700 text-slate-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer whitespace-nowrap">
                     Resolver Pendência
                 </a>
-
             </div>
             {% empty %}
             <div class="flex flex-col items-center justify-center p-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
                 <i data-lucide="smile" class="w-12 h-12 mb-3 text-indigo-400"></i>
-                <p class="text-xs font-extrabold text-slate-600">Nenhuma pendência ativa para hoje!</p>
-                <p class="text-[10px] text-slate-400 mt-1">A pousada está com as operações 100% atualizadas e em dia.</p>
+                <p class="text-xs font-extrabold text-slate-600">Nenhuma limpeza pendente para hoje!</p>
             </div>
             {% endfor %}
         </div>
+
+        <!-- Tab Outras Ações -->
+        <div id="tab-content-outras" class="grid grid-cols-1 gap-4 hidden">
+            {% for acao in acoes_outras %}
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 {% if acao.enviado %}opacity-60 bg-slate-50/50 grayscale-[0.3]{% endif %}">
+                <!-- Action Content -->
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border
+                        {% if acao.tipo == 'checkin' %}bg-indigo-50 border-indigo-100 text-indigo-600
+                        {% elif acao.tipo == 'checkout' %}bg-sky-50 border-sky-100 text-sky-600
+                        {% elif acao.tipo == 'whatsapp' %}bg-emerald-50 border-emerald-100 text-emerald-600
+                        {% else %}bg-amber-50 border-amber-100 text-amber-600{% endif %}">
+                        {% if acao.tipo == 'checkin' %}
+                            <i data-lucide="user-plus" class="w-5 h-5"></i>
+                        {% elif acao.tipo == 'checkout' %}
+                            <i data-lucide="user-minus" class="w-5 h-5"></i>
+                        {% elif acao.tipo == 'whatsapp' %}
+                            <i data-lucide="message-circle" class="w-5 h-5"></i>
+                        {% else %}
+                            <i data-lucide="wrench" class="w-5 h-5"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <div class="flex items-center flex-wrap gap-2">
+                            <span class="font-extrabold text-slate-800 text-sm {% if acao.enviado %}line-through{% endif %}">{{ acao.titulo }}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide
+                                {% if acao.prioridade == 'alta' %}bg-rose-50 text-rose-700 border border-rose-100
+                                {% elif acao.prioridade == 'media' %}bg-amber-50 text-amber-700 border border-amber-100
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ acao.badge }}
+                            </span>
+                            {% if acao.enviado %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                Enviado
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-slate-500 font-medium max-w-2xl leading-relaxed">{{ acao.descricao }}</p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="flex gap-2 w-full sm:w-auto">
+                    {% if acao.tipo == 'whatsapp' %}
+                    <form method="POST" action="{% url 'dashboard' %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="marcar_pre_checkin_enviado">
+                        <input type="hidden" name="reserva_id" value="{{ acao.id }}">
+                        <button type="submit" onclick="window.open('{{ acao.link }}', '_blank')" class="w-full sm:w-auto px-4 py-2 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            {% if acao.enviado %}Re-enviar WhatsApp{% else %}Enviar WhatsApp{% endif %}
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{{ acao.link }}" class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-indigo-50 border border-slate-250 hover:border-indigo-100 hover:text-indigo-700 text-slate-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer whitespace-nowrap">
+                        Resolver Pendência
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="flex flex-col items-center justify-center p-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400">
+                <i data-lucide="smile" class="w-12 h-12 mb-3 text-indigo-400"></i>
+                <p class="text-xs font-extrabold text-slate-600">Nenhuma outra ação pendente para hoje!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <script>
+            function switchTab(tab) {
+                const btnLimpeza = document.getElementById('tab-btn-limpeza');
+                const btnOutras = document.getElementById('tab-btn-outras');
+                const contentLimpeza = document.getElementById('tab-content-limpeza');
+                const contentOutras = document.getElementById('tab-content-outras');
+                
+                if (tab === 'limpeza') {
+                    btnLimpeza.className = 'border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2';
+                    btnOutras.className = 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2';
+                    contentLimpeza.classList.remove('hidden');
+                    contentOutras.classList.add('hidden');
+                } else {
+                    btnOutras.className = 'border-indigo-500 text-indigo-600 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2';
+                    btnLimpeza.className = 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-bold flex items-center gap-2';
+                    contentOutras.classList.remove('hidden');
+                    contentLimpeza.classList.add('hidden');
+                }
+            }
+        </script>
     </div>
 </div>
 {% endblock %}
