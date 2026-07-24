@@ -872,12 +872,15 @@ def portal_hospede(request, token):
     if pousada.video_pos_checkin:
         video_embed_url = pousada.video_pos_checkin
         
-        # Logica melhorada para YouTube (watch e youtu.be)
+        # Logica melhorada para YouTube (watch e youtu.be e shorts)
         if 'youtube.com/watch?v=' in video_embed_url:
             video_id = video_embed_url.split('watch?v=')[1].split('&')[0]
             video_embed_url = f"https://www.youtube.com/embed/{video_id}"
         elif 'youtu.be/' in video_embed_url:
             video_id = video_embed_url.split('youtu.be/')[1].split('?')[0]
+            video_embed_url = f"https://www.youtube.com/embed/{video_id}"
+        elif 'youtube.com/shorts/' in video_embed_url:
+            video_id = video_embed_url.split('youtube.com/shorts/')[1].split('?')[0].split('/')[0]
             video_embed_url = f"https://www.youtube.com/embed/{video_id}"
 
     return render(request, 'reservas/portal_hospede.html', {

@@ -405,9 +405,21 @@
                             {% endif %}
                         </div>
                         
-                        <div class="mt-3.5 flex items-start gap-2.5 text-[11px] text-slate-500 leading-normal">
-                            <i data-lucide="help-circle" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
-                            <span>Assista ao vídeo para se familiarizar com a pousada e suas instruções.</span>
+                        <div class="mt-3.5 flex flex-col gap-2 text-[11px] text-slate-500 leading-normal">
+                            <div class="flex items-start gap-2.5">
+                                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
+                                <span>Assista ao vídeo para se familiarizar com a pousada e suas instruções.</span>
+                            </div>
+                            
+                            {% if 'youtube.com' in pousada.video_pos_checkin or 'youtu.be' in pousada.video_pos_checkin %}
+                            <div class="mt-2 text-center w-full">
+                                <p class="text-[10px] text-slate-400 mb-1.5">O vídeo apresentou erro 153 ou não carregou acima?</p>
+                                <a href="{{ pousada.video_pos_checkin }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors border border-slate-200">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                    Assistir direto no YouTube
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
