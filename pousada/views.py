@@ -502,6 +502,7 @@ def ver_logs(request):
 
 
 @login_required
+@pousada_required
 def governanca_dashboard(request):
     # Enforce access permissions
     def check_governanca_permission(user):
