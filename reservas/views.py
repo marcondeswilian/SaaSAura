@@ -116,7 +116,27 @@ def reserva_lista_view(request):
     if not pousada:
         return render(request, 'reservas/lista_reservas.html', {'error': 'Você não possui uma pousada vinculada ao seu usuário.'})
         
-    reservas_list = Reserva.objects.filter(pousada=pousada).select_related(
+    from datetime import date, timedelta, datetime
+    
+    data_inicio_str = request.GET.get('data_inicio')
+    data_fim_str = request.GET.get('data_fim')
+    
+    if data_inicio_str and data_fim_str:
+        try:
+            data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+            data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+        except ValueError:
+            data_inicio = date.today()
+            data_fim = date.today() + timedelta(days=7)
+    else:
+        data_inicio = date.today()
+        data_fim = date.today() + timedelta(days=7)
+
+    reservas_list = Reserva.objects.filter(
+        pousada=pousada,
+        data_checkin__lte=data_fim,
+        data_checkout__gte=data_inicio
+    ).select_related(
         'hospede', 'quarto', 'quarto__categoria', 'motivo_bloqueio', 'canal_origem'
     ).order_by('data_checkin')
     
@@ -140,6 +160,8 @@ def reserva_lista_view(request):
         'valor_medio': valor_medio,
         'metodos_pagamento': metodos_pagamento,
         'canais_origem': canais_origem,
+        'data_inicio_filtro': data_inicio.strftime('%Y-%m-%d'),
+        'data_fim_filtro': data_fim.strftime('%Y-%m-%d'),
     })
 
 @login_required
